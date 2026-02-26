@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    
+    <!-- Application Info -->
+    <AssemblyName>Voxify</AssemblyName>
+    <RootNamespace>Voxify</RootNamespace>
+    <Version>0.1.0</Version>
+    <Authors>Voxify Team</Authors>
+    <Description>Голосовой ввод текста для Windows с использованием Vosk</Description>
+    
+    <!-- Build Settings -->
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>$(NoWarn);CS8500</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Speech Recognition -->
+    <PackageReference Include="Vosk" Version="0.3.38" />
+    
+    <!-- Audio Processing -->
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    
+    <!-- Keyboard Simulation -->
+    <PackageReference Include="InputSimulator" Version="1.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- App Settings File -->
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
