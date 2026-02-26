@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Voxify.Config;
 
 /// <summary>
-/// Менеджер конфигурации — загрузка и сохранение настроек в JSON-файл.
+/// Configuration manager — loading and saving settings to JSON file.
 /// </summary>
 public class ConfigurationManager
 {
@@ -15,7 +15,7 @@ public class ConfigurationManager
 
     public ConfigurationManager()
     {
-        // Путь к конфигу рядом с exe-файлом
+        // Path to config next to exe file
         var baseDir = AppContext.BaseDirectory;
         _configPath = Path.Combine(baseDir, ConfigFileName);
 
@@ -29,7 +29,7 @@ public class ConfigurationManager
     }
     
     /// <summary>
-    /// Загружает настройки из файла или создаёт новые по умолчанию.
+    /// Loads settings from file or creates new default ones.
     /// </summary>
     private AppSettings LoadOrCreateDefault()
     {
@@ -47,42 +47,42 @@ public class ConfigurationManager
         }
         catch (JsonException ex)
         {
-            Console.WriteLine($"Ошибка чтения конфигурации: {ex.Message}. Используются настройки по умолчанию.");
+            Console.WriteLine($"Error reading configuration: {ex.Message}. Using default settings.");
         }
         catch (IOException ex)
         {
-            Console.WriteLine($"Ошибка доступа к конфигурации: {ex.Message}. Используются настройки по умолчанию.");
+            Console.WriteLine($"Error accessing configuration: {ex.Message}. Using default settings.");
         }
-        
-        // Возвращаем настройки по умолчанию
+
+        // Return default settings
         return new AppSettings();
     }
     
     /// <summary>
-    /// Сохраняет текущие настройки в файл.
+    /// Saves current settings to file.
     /// </summary>
     public void Save()
     {
         try
         {
-            // Создаём директорию если не существует
+            // Create directory if it doesn't exist
             var directory = Path.GetDirectoryName(_configPath);
             if (directory != null && !Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
-            
+
             var json = JsonSerializer.Serialize(Settings, _jsonOptions);
             File.WriteAllText(_configPath, json);
         }
         catch (IOException ex)
         {
-            Console.WriteLine($"Ошибка сохранения конфигурации: {ex.Message}");
+            Console.WriteLine($"Error saving configuration: {ex.Message}");
         }
     }
-    
+
     /// <summary>
-    /// Обновляет настройки и сохраняет их.
+    /// Updates settings and saves them.
     /// </summary>
     public void UpdateSettings(Action<AppSettings> updateAction)
     {

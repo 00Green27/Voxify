@@ -4,17 +4,17 @@ using Voxify.Config;
 namespace Voxify.Core;
 
 /// <summary>
-/// Менеджер глобальных горячих клавиш через Windows API.
+/// Global hotkey manager via Windows API.
 /// </summary>
 public class HotkeyManager : IDisposable
 {
-    // Модификаторы клавиш (Windows API)
+    // Key modifiers (Windows API)
     public const int MOD_ALT = 0x1;
     public const int MOD_CONTROL = 0x2;
     public const int MOD_SHIFT = 0x4;
     public const int MOD_WIN = 0x8;
 
-    // Сообщение WM_HOTKEY
+    // WM_HOTKEY message
     public const int WM_HOTKEY = 0x312;
 
     [DllImport("user32.dll", SetLastError = true)]
@@ -37,41 +37,41 @@ public class HotkeyManager : IDisposable
     private bool _disposed;
 
     /// <summary>
-    /// Событие при нажатии горячей клавиши.
+    /// Event fired when hotkey is pressed.
     /// </summary>
     public event EventHandler? HotkeyPressed;
 
     public HotkeyManager()
     {
-        // Используем handle процесса для регистрации хоткеев
+        // Use process handle for hotkey registration
         _handle = System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;
-        
-        // Добавляем фильтр сообщений для обработки WM_HOTKEY
+
+        // Add message filter to handle WM_HOTKEY
         _messageFilter = new HotkeyMessageFilter(this);
         System.Windows.Forms.Application.AddMessageFilter(_messageFilter);
-        
+
         _hotkeyId = 0;
     }
 
     /// <summary>
-    /// Регистрирует горячую клавишу.
+    /// Registers a hotkey.
     /// </summary>
     public void RegisterHotkey(HotkeyConfig config)
     {
         UnregisterHotkey();
 
         _config = config;
-        
-        // Получаем уникальный ID через GlobalAddAtom
+
+        // Get unique ID via GlobalAddAtom
         string atomName = Guid.NewGuid().ToString();
         _hotkeyId = GlobalAddAtom(atomName);
 
         if (_hotkeyId == 0)
         {
-            throw new InvalidOperationException($"Не удалось получить уникальный ID для хоткея. Ошибка: {Marshal.GetLastWin32Error()}");
+            throw new InvalidOperationException($"Failed to get unique ID for hotkey. Error: {Marshal.GetLastWin32Error()}");
         }
 
-        // Регистрируем горячую клавишу
+        // Register hotkey
         int modifiers = config.GetCombinedModifiers();
         uint vkCode = ParseKeyCode(config.Key);
 
@@ -80,12 +80,12 @@ public class HotkeyManager : IDisposable
             int error = Marshal.GetLastWin32Error();
             GlobalDeleteAtom(_hotkeyId);
             _hotkeyId = 0;
-            throw new InvalidOperationException($"Не удалось зарегистрировать горячую клавишу {config}. Ошибка Windows: {error}");
+            throw new InvalidOperationException($"Failed to register hotkey {config}. Windows error: {error}");
         }
     }
 
     /// <summary>
-    /// Отменяет регистрацию горячей клавиши.
+    /// Unregisters hotkey.
     /// </summary>
     public void UnregisterHotkey()
     {
@@ -98,7 +98,7 @@ public class HotkeyManager : IDisposable
     }
 
     /// <summary>
-    /// Парсит код клавиши из строки.
+    /// Parses key code from string.
     /// </summary>
     private static uint ParseKeyCode(string keyCode) => keyCode.ToUpper() switch
     {
@@ -115,11 +115,11 @@ public class HotkeyManager : IDisposable
         "D0" => 0x30, "D1" => 0x31, "D2" => 0x32, "D3" => 0x33,
         "D4" => 0x34, "D5" => 0x35, "D6" => 0x36, "D7" => 0x37,
         "D8" => 0x38, "D9" => 0x39,
-        _ => 0x7B // F12 по умолчанию
+        _ => 0x7B // F12 by default
     };
 
     /// <summary>
-    /// Обрабатывает сообщение WM_HOTKEY.
+    /// Handles WM_HOTKEY message.
     /// </summary>
     internal void OnHotKeyMessage()
     {
@@ -137,7 +137,7 @@ public class HotkeyManager : IDisposable
     }
 
     /// <summary>
-    /// Фильтр сообщений для обработки WM_HOTKEY.
+    /// Message filter for handling WM_HOTKEY.
     /// </summary>
     private class HotkeyMessageFilter : System.Windows.Forms.IMessageFilter
     {

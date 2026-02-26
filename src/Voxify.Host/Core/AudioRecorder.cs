@@ -3,7 +3,7 @@ using NAudio.Wave;
 namespace Voxify.Core;
 
 /// <summary>
-/// Компонент для записи аудио с микрофона.
+/// Component for recording audio from microphone.
 /// </summary>
 public class AudioRecorder : IDisposable
 {
@@ -13,24 +13,24 @@ public class AudioRecorder : IDisposable
     private bool _disposed;
 
     /// <summary>
-    /// Событие при получении данных с микрофона.
+    /// Event fired when receiving data from microphone.
     /// </summary>
     public event EventHandler<WaveBuffer>? DataAvailable;
 
     /// <summary>
-    /// Начинает запись с микрофона.
+    /// Starts recording from microphone.
     /// </summary>
     public void StartRecording()
     {
         if (_isRecording)
         {
-            throw new InvalidOperationException("Запись уже идёт");
+            throw new InvalidOperationException("Recording is already in progress");
         }
 
         _audioStream = new MemoryStream();
         _waveIn = new WaveInEvent
         {
-            // Формат: 16kHz, 16-bit, mono (требуется Vosk)
+            // Format: 16kHz, 16-bit, mono (required by Vosk)
             WaveFormat = new WaveFormat(16000, 16, 1),
             BufferMilliseconds = 200
         };
@@ -43,7 +43,7 @@ public class AudioRecorder : IDisposable
     }
 
     /// <summary>
-    /// Останавливает запись и возвращает аудио-данные.
+    /// Stops recording and returns audio data.
     /// </summary>
     public async Task<byte[]> StopRecordingAsync()
     {
@@ -53,8 +53,8 @@ public class AudioRecorder : IDisposable
         }
 
         _waveIn?.StopRecording();
-        
-        // Ждём завершения обработки
+
+        // Wait for processing to complete
         await Task.Delay(100);
 
         _isRecording = false;
@@ -82,7 +82,7 @@ public class AudioRecorder : IDisposable
     }
 
     /// <summary>
-    /// Проверяет доступность микрофонов в системе.
+    /// Checks microphone availability in the system.
     /// </summary>
     public static bool IsMicrophoneAvailable()
     {
@@ -90,7 +90,7 @@ public class AudioRecorder : IDisposable
     }
 
     /// <summary>
-    /// Возвращает список доступных устройств записи.
+    /// Returns list of available recording devices.
     /// </summary>
     public static string[] GetAvailableDevices()
     {
@@ -115,7 +115,7 @@ public class AudioRecorder : IDisposable
 }
 
 /// <summary>
-/// Буфер аудио-данных.
+/// Audio data buffer.
 /// </summary>
 public class WaveBuffer
 {

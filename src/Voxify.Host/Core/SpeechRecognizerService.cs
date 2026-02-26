@@ -1,7 +1,7 @@
 namespace Voxify.Core;
 
 /// <summary>
-/// Реализация распознавания речи через Vosk.
+/// Speech recognition implementation via Vosk.
 /// </summary>
 public class SpeechRecognizerService : ISpeechRecognizer
 {
@@ -17,7 +17,7 @@ public class SpeechRecognizerService : ISpeechRecognizer
     }
 
     /// <summary>
-    /// Инициализирует распознаватель с указанной моделью.
+    /// Initializes recognizer with specified model.
     /// </summary>
     public async Task InitializeAsync(string modelPath, string language)
     {
@@ -26,18 +26,18 @@ public class SpeechRecognizerService : ISpeechRecognizer
     }
 
     /// <summary>
-    /// Записывает аудио с микрофона и распознаёт речь.
+    /// Records audio from microphone and recognizes speech.
     /// </summary>
     public async Task<string?> RecognizeAsync(byte[]? audioData = null, CancellationToken cancellationToken = default)
     {
         if (!_isInitialized)
         {
-            throw new InvalidOperationException("Распознаватель не инициализирован");
+            throw new InvalidOperationException("Recognizer is not initialized");
         }
 
         try
         {
-            // Записываем аудио
+            // Record audio
             byte[] audioBytes;
             if (audioData != null)
             {
@@ -46,10 +46,10 @@ public class SpeechRecognizerService : ISpeechRecognizer
             else
             {
                 _audioRecorder.StartRecording();
-                
-                // Ждём несколько секунд для записи
+
+                // Wait a few seconds for recording
                 await Task.Delay(3000, cancellationToken);
-                
+
                 audioBytes = await _audioRecorder.StopRecordingAsync();
             }
 
@@ -58,10 +58,10 @@ public class SpeechRecognizerService : ISpeechRecognizer
                 return null;
             }
 
-            // Распознаём через Vosk
+            // Recognize via Vosk
             using var recognizer = _voskEngine.CreateRecognizer();
-            
-            // Принимаем аудио-данные чанками по 4KB
+
+            // Accept audio data in 4KB chunks
             int chunkSize = 4096;
             for (int i = 0; i < audioBytes.Length; i += chunkSize)
             {
@@ -69,10 +69,10 @@ public class SpeechRecognizerService : ISpeechRecognizer
                 int size = Math.Min(chunkSize, remaining);
                 byte[] chunk = new byte[size];
                 Array.Copy(audioBytes, i, chunk, 0, size);
-                
+
                 if (recognizer.AcceptWaveform(chunk, size))
                 {
-                    // Получаем полный результат
+                    // Get full result
                     var result = recognizer.Result();
                     if (!string.IsNullOrEmpty(result))
                     {
@@ -81,7 +81,7 @@ public class SpeechRecognizerService : ISpeechRecognizer
                 }
             }
 
-            // Финальный результат (частичный)
+            // Final result (partial)
             var finalResult = recognizer.FinalResult();
             return ExtractTextFromResult(finalResult);
         }
@@ -91,12 +91,12 @@ public class SpeechRecognizerService : ISpeechRecognizer
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"Ошибка распознавания: {ex.Message}", ex);
+            throw new InvalidOperationException($"Recognition error: {ex.Message}", ex);
         }
     }
 
     /// <summary>
-    /// Извлекает текст из JSON-результата Vosk.
+    /// Extracts text from Vosk JSON result.
     /// </summary>
     private static string? ExtractTextFromResult(string jsonResult)
     {
@@ -124,29 +124,29 @@ public class SpeechRecognizerService : ISpeechRecognizer
     }
 
     /// <summary>
-    /// Записывает и распознаёт речь с микрофона.
+    /// Records and recognizes speech from microphone.
     /// </summary>
     public async Task<string?> RecognizeFromMicrophoneAsync(int maxDurationSeconds = 10, CancellationToken cancellationToken = default)
     {
         if (!_isInitialized)
         {
-            throw new InvalidOperationException("Распознаватель не инициализирован");
+            throw new InvalidOperationException("Recognizer is not initialized");
         }
 
         try
         {
             _audioRecorder.StartRecording();
-            
-            // Ждём указанное время или пока не будет отменено
+
+            // Wait specified time or until cancelled
             await Task.Delay(maxDurationSeconds * 1000, cancellationToken);
-            
+
             var audioBytes = await _audioRecorder.StopRecordingAsync();
-            
+
             return await RecognizeAsync(audioBytes, cancellationToken);
         }
         catch (OperationCanceledException)
         {
-            // Отмена - нормальное завершение
+            // Cancellation - normal completion
             await _audioRecorder.StopRecordingAsync();
             return null;
         }

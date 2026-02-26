@@ -6,7 +6,7 @@ using WindowsInput.Native;
 namespace Voxify.Core;
 
 /// <summary>
-/// Компонент для эмуляции ввода текста с клавиатуры.
+/// Component for emulating keyboard text input.
 /// </summary>
 public class TextInputInjector
 {
@@ -20,7 +20,7 @@ public class TextInputInjector
     }
 
     /// <summary>
-    /// Вводит текст в активное окно.
+    /// Types text into the active window.
     /// </summary>
     public void TypeText(string text)
     {
@@ -29,7 +29,7 @@ public class TextInputInjector
             return;
         }
 
-        // Предобработка текста — удаляем спецсимволы Vosk
+        // Preprocess text — remove Vosk special characters
         string processedText = PreprocessText(text);
 
         if (_config.PasteAsClipboard)
@@ -43,11 +43,11 @@ public class TextInputInjector
     }
 
     /// <summary>
-    /// Предобрабатывает текст — удаляет спецсимволы и нормализует.
+    /// Preprocesses text — removes special characters and normalizes.
     /// </summary>
     private static string PreprocessText(string text)
     {
-        // Удаляем возможные маркеры Vosk и лишние пробелы
+        // Remove possible Vosk markers and extra spaces
         return text
             .Replace("{", "")
             .Replace("}", "")
@@ -57,15 +57,15 @@ public class TextInputInjector
     }
 
     /// <summary>
-    /// Вводит текст через эмуляцию клавиатуры.
+    /// Types text via keyboard emulation.
     /// </summary>
     private void TypeViaKeyboard(string text)
     {
         foreach (char c in text)
         {
-            // Симулируем нажатие клавиши для символа
+            // Simulate key press for character
             _inputSimulator.Keyboard.TextEntry(c);
-            
+
             if (_config.TypeDelayMs > 0)
             {
                 Thread.Sleep(_config.TypeDelayMs);
@@ -74,25 +74,25 @@ public class TextInputInjector
     }
 
     /// <summary>
-    /// Вводит текст через буфер обмена (быстрее для длинного текста).
+    /// Types text via clipboard (faster for long text).
     /// </summary>
     private void TypeViaClipboard(string text)
     {
         try
         {
-            // Сохраняем текущее содержимое буфера
+            // Save current clipboard content
             var originalText = Clipboard.GetText();
 
-            // Устанавливаем новый текст
+            // Set new text
             Clipboard.SetText(text);
 
-            // Эмулируем Ctrl+V
+            // Emulate Ctrl+V
             _inputSimulator.Keyboard.ModifiedKeyStroke(
                 VirtualKeyCode.CONTROL,
                 VirtualKeyCode.VK_V
             );
 
-            // Восстанавливаем оригинальный буфер
+            // Restore original clipboard
             if (!string.IsNullOrEmpty(originalText))
             {
                 Thread.Sleep(100);
@@ -101,13 +101,13 @@ public class TextInputInjector
         }
         catch
         {
-            // Fallback на клавиатуру если буфер не работает
+            // Fallback to keyboard if clipboard doesn't work
             TypeViaKeyboard(text);
         }
     }
 
     /// <summary>
-    /// Эмулирует нажатие Enter для отправки сообщения.
+    /// Emulates Enter key press to send message.
     /// </summary>
     public void PressEnter()
     {
@@ -115,7 +115,7 @@ public class TextInputInjector
     }
 
     /// <summary>
-    /// Эмулирует нажатие Ctrl+V (вставить).
+    /// Emulates Ctrl+V (paste).
     /// </summary>
     public void Paste()
     {

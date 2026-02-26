@@ -5,7 +5,7 @@ using Voxify.Core;
 namespace Voxify.UI;
 
 /// <summary>
-/// Главная форма приложения Voxify.
+/// Main form of the Voxify application.
 /// </summary>
 public class MainForm : Form
 {
@@ -20,27 +20,27 @@ public class MainForm : Form
 
     public MainForm()
     {
-        // Инициализация компонентов
+        // Initialize components
         _contextMenu = new ContextMenuStrip();
         _notifyIcon = new NotifyIcon();
-        
-        // Загружаем конфигурацию
+
+        // Load configuration
         _configManager = new ConfigurationManager();
 
-        // Создаём компоненты ядра
+        // Create core components
         _voskEngine = new VoskEngine();
         _audioRecorder = new AudioRecorder();
         _speechRecognizer = new SpeechRecognizerService(_voskEngine, _audioRecorder);
         _hotkeyManager = new HotkeyManager();
         _textInputInjector = new TextInputInjector(_configManager.Settings.TextInput);
 
-        // Настраиваем UI
+        // Configure UI
         InitializeUI();
-        
-        // Подписываемся на события
+
+        // Subscribe to events
         _hotkeyManager.HotkeyPressed += OnHotkeyPressed;
-        
-        // Инициализируем приложение
+
+        // Initialize the application
         InitializeAsync();
     }
 
@@ -53,27 +53,27 @@ public class MainForm : Form
         this.MinimizeBox = false;
         this.MaximizeBox = false;
         
-        // Создаём иконку (используем стандартную)
+        // Create icon (use standard one)
         _notifyIcon.Icon = SystemIcons.Application;
-        _notifyIcon.Text = "Voxify — Голосовой ввод";
+        _notifyIcon.Text = "Voxify — Voice Input";
         _notifyIcon.Visible = true;
 
-        // Создаём контекстное меню
-        var showItem = new ToolStripMenuItem("Показать", null, OnShowClick);
-        var settingsItem = new ToolStripMenuItem("Настройки", null, OnSettingsClick);
+        // Create context menu
+        var showItem = new ToolStripMenuItem("Show", null, OnShowClick);
+        var settingsItem = new ToolStripMenuItem("Settings", null, OnSettingsClick);
         var separator = new ToolStripSeparator();
-        var exitItem = new ToolStripMenuItem("Выход", null, OnExitClick);
+        var exitItem = new ToolStripMenuItem("Exit", null, OnExitClick);
 
         _contextMenu.Items.AddRange([showItem, settingsItem, separator, exitItem]);
         _notifyIcon.ContextMenuStrip = _contextMenu;
 
-        // Обработка двойного клика
+        // Handle double click
         _notifyIcon.DoubleClick += (s, e) => ShowForm();
     }
 
     private async void InitializeAsync()
     {
-        // Инициализируем модель Vosk если путь указан
+        // Initialize Vosk model if path is specified
         if (!string.IsNullOrEmpty(_configManager.Settings.ModelPath))
         {
             try
@@ -86,7 +86,7 @@ public class MainForm : Form
                 _notifyIcon.ShowBalloonTip(
                     2000,
                     "Voxify",
-                    $"Модель загружена. Язык: {_configManager.Settings.Language}",
+                    $"Model loaded. Language: {_configManager.Settings.Language}",
                     ToolTipIcon.Info
                 );
             }
@@ -94,8 +94,8 @@ public class MainForm : Form
             {
                 _notifyIcon.ShowBalloonTip(
                     5000,
-                    "Voxify — Ошибка",
-                    $"Не удалось загрузить модель: {ex.Message}",
+                    "Voxify — Error",
+                    $"Failed to load model: {ex.Message}",
                     ToolTipIcon.Error
                 );
             }
@@ -104,13 +104,13 @@ public class MainForm : Form
         {
             _notifyIcon.ShowBalloonTip(
                 5000,
-                "Voxify — Внимание",
-                "Путь к модели не указан. Настройте приложение через контекстное меню.",
+                "Voxify — Warning",
+                "Model path is not specified. Configure the application via context menu.",
                 ToolTipIcon.Warning
             );
         }
 
-        // Регистрируем горячую клавишу
+        // Register hotkey
         try
         {
             _hotkeyManager.RegisterHotkey(_configManager.Settings.Hotkey);
@@ -119,8 +119,8 @@ public class MainForm : Form
         {
             _notifyIcon.ShowBalloonTip(
                 5000,
-                "Voxify — Ошибка",
-                $"Не удалось зарегистрировать хоткей: {ex.Message}",
+                "Voxify — Error",
+                $"Failed to register hotkey: {ex.Message}",
                 ToolTipIcon.Error
             );
         }
@@ -128,28 +128,28 @@ public class MainForm : Form
 
     private async void OnHotkeyPressed(object? sender, EventArgs e)
     {
-        // Показываем уведомление о начале записи
+        // Show notification about recording start
         _notifyIcon.ShowBalloonTip(
             1000,
             "Voxify",
-            "Запись речи...",
+            "Recording speech...",
             ToolTipIcon.Info
         );
 
         try
         {
-            // Распознаём речь (максимум 10 секунд)
+            // Recognize speech (max 10 seconds)
             var text = await _speechRecognizer.RecognizeFromMicrophoneAsync(10);
 
             if (!string.IsNullOrEmpty(text))
             {
-                // Вставляем текст
+                // Insert text
                 _textInputInjector.TypeText(text);
-                
+
                 _notifyIcon.ShowBalloonTip(
                     2000,
                     "Voxify",
-                    $"Распознано: {text}",
+                    $"Recognized: {text}",
                     ToolTipIcon.Info
                 );
             }
@@ -158,7 +158,7 @@ public class MainForm : Form
                 _notifyIcon.ShowBalloonTip(
                     2000,
                     "Voxify",
-                    "Речь не распознана",
+                    "Speech not recognized",
                     ToolTipIcon.Info
                 );
             }
@@ -167,8 +167,8 @@ public class MainForm : Form
         {
             _notifyIcon.ShowBalloonTip(
                 5000,
-                "Voxify — Ошибка",
-                $"Ошибка распознавания: {ex.Message}",
+                "Voxify — Error",
+                $"Recognition error: {ex.Message}",
                 ToolTipIcon.Error
             );
         }
@@ -181,10 +181,10 @@ public class MainForm : Form
 
     private void OnSettingsClick(object? sender, EventArgs e)
     {
-        // TODO: Открыть окно настроек
+        // TODO: Open settings window
         MessageBox.Show(
-            $"Настройки Voxify\n\nПуть к модели: {_configManager.Settings.ModelPath}\nЯзык: {_configManager.Settings.Language}\nГорячая клавиша: {_configManager.Settings.Hotkey}",
-            "Voxify — Настройки",
+            $"Voxify Settings\n\nModel Path: {_configManager.Settings.ModelPath}\nLanguage: {_configManager.Settings.Language}\nHotkey: {_configManager.Settings.Hotkey}",
+            "Voxify — Settings",
             MessageBoxButtons.OK,
             MessageBoxIcon.Information
         );
@@ -213,7 +213,7 @@ public class MainForm : Form
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
-        // Скрываем форму вместо закрытия (если не выходим через меню)
+        // Hide form instead of closing (if not exiting via menu)
         if (e.CloseReason == CloseReason.UserClosing)
         {
             e.Cancel = true;

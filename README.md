@@ -1,86 +1,86 @@
 # Voxify
 
-Голосовой ввод текста для Windows с использованием Vosk — офлайн-распознавание речи с вводом в любое приложение.
+Voice text input for Windows using Vosk — offline speech recognition with input to any application.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![.NET](https://img.shields.io/badge/.NET-10.0-purple)
 ![Status](https://img.shields.io/badge/status-MVP-orange)
 
-## Возможности
+## Features
 
-- 🔒 **Офлайн-распознавание** — работает без интернета через Vosk
-- ⌨️ **Push-to-Talk** — запись по нажатию горячей клавиши (настраиваемая)
-- 🎤 **Поддержка микрофона** — захват аудио через NAudio
-- 📝 **Ввод в любое приложение** — вставка текста через эмуляцию клавиатуры
-- 🛠️ **Минималистичный UI** — иконка в системном трее
-- 🌐 **Мультиязычность** — поддержка русского и английского
+- 🔒 **Offline Recognition** — works without internet via Vosk
+- ⌨️ **Push-to-Talk** — recording by hotkey press (configurable)
+- 🎤 **Microphone Support** — audio capture via NAudio
+- 📝 **Input to Any Application** — text insertion via keyboard emulation
+- 🛠️ **Minimalistic UI** — system tray icon
+- 🌐 **Multilingual** — Russian and English support
 
-## Требования
+## Requirements
 
-- **ОС**: Windows 10/11
+- **OS**: Windows 10/11
 - **.NET**: .NET 10.0 SDK
-- **Микрофон**: Любое устройство записи
-- **Модель Vosk**: ~50 МБ на язык (малая модель)
+- **Microphone**: Any recording device
+- **Vosk Model**: ~50 MB per language (small model)
 
-## Быстрый старт
+## Quick Start
 
-### 1. Скачать модель Vosk
+### 1. Download Vosk Model
 
-**Рекомендуется для начала** (малые модели ~50 МБ):
+**Recommended for start** (small models ~50 MB):
 
-| Язык | Модель | Ссылка |
-|------|--------|--------|
-| 🇷🇺 Русский | vosk-model-small-ru-0.22 | [Скачать](https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22.zip) |
-| 🇬🇧 English | vosk-model-small-en-us-0.15 | [Скачать](https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip) |
+| Language | Model | Link |
+|----------|-------|------|
+| 🇷🇺 Russian | vosk-model-small-ru-0.22 | [Download](https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22.zip) |
+| 🇬🇧 English | vosk-model-small-en-us-0.15 | [Download](https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip) |
 
-**Инструкция**:
-1. Скачайте ZIP-архив модели
-2. Распакуйте в папку, например: `C:\Voxify\Models\vosk-model-small-ru-0.22`
-3. Подробнее: [models/README.md](models/README.md)
+**Instructions**:
+1. Download the model ZIP archive
+2. Extract to a folder, e.g.: `C:\Voxify\Models\vosk-model-small-ru-0.22`
+3. See more: [models/README.md](models/README.md)
 
-### 2. Сборка приложения
+### 2. Build the Application
 
 ```bash
-# Клонирование репозитория
+# Clone repository
 git clone <repository-url>
 cd Voxify
 
-# Восстановление пакетов
+# Restore packages
 dotnet restore
 
-# Сборка
+# Build
 dotnet build -c Release
 
-# Запуск
+# Run
 dotnet run --project src/Voxify.Host/Voxify.Host.csproj
 ```
 
-### 3. Публикация (опционально)
+### 3. Publish (optional)
 
 ```bash
-# Создание исполняемого файла
+# Create executable
 dotnet publish -c Release -o ./publish
 
-# Копирование в папку установки
+# Copy to installation folder
 # copy .\publish\* "C:\Program Files\Voxify\"
 ```
 
-## Использование
+## Usage
 
-1. **Запуск**: Запустите приложение — иконка появится в трее
-2. **Настройка**: При первом запуске укажите путь к модели в настройках
-3. **Запись**: Нажмите горячую клавишу (по умолчанию `Ctrl+F12`) → говорите → отпустите
-4. **Результат**: Распознанный текст автоматически вставится в активное поле
+1. **Start**: Launch the application — icon will appear in system tray
+2. **Configure**: On first launch, specify model path in settings
+3. **Record**: Press hotkey (default `Ctrl+F12`) → speak → release
+4. **Result**: Recognized text will be automatically inserted into active field
 
-### Горячие клавиши (по умолчанию)
+### Hotkeys (default)
 
-| Действие | Клавиши |
-|----------|---------|
-| Начать/остановить запись | `Ctrl + F12` |
+| Action | Keys |
+|--------|------|
+| Start/stop recording | `Ctrl + F12` |
 
-## Настройка
+## Configuration
 
-Файл настроек: `%APPDATA%\Voxify\appsettings.json`
+Settings file: `%APPDATA%\Voxify\appsettings.json`
 
 ```json
 {
@@ -101,101 +101,65 @@ dotnet publish -c Release -o ./publish
 }
 ```
 
-### Описание настроек
+### Settings Description
 
-| Параметр | Описание | Значение по умолчанию |
-|----------|----------|----------------------|
-| `ModelPath` | Путь к папке с моделью Vosk | `""` |
-| `Language` | Язык модели (ru-RU, en-US) | `"ru-RU"` |
-| `Hotkey.Modifiers` | Модификаторы (Control, Alt, Shift, Win) | `["Control"]` |
-| `Hotkey.Key` | Клавиша (F1-F12, A-Z, 0-9) | `"F12"` |
-| `VoiceActivityDetection.SilenceThreshold` | Порог громкости (0.0-1.0) | `0.05` |
-| `TextInput.TypeDelayMs` | Задержка между символами (мс) | `10` |
-| `TextInput.PasteAsClipboard` | Вставка через буфер обмена | `false` |
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `ModelPath` | Path to Vosk model folder | `""` |
+| `Language` | Model language (ru-RU, en-US) | `"ru-RU"` |
+| `Hotkey.Modifiers` | Modifiers (Control, Alt, Shift, Win) | `["Control"]` |
+| `Hotkey.Key` | Key (F1-F12, A-Z, 0-9) | `"F12"` |
+| `VoiceActivityDetection.SilenceThreshold` | Volume threshold (0.0-1.0) | `0.05` |
+| `TextInput.TypeDelayMs` | Delay between characters (ms) | `10` |
+| `TextInput.PasteAsClipboard` | Paste via clipboard | `false` |
 
-## Структура проекта
+## Architecture
 
-```
-Voxify/
-├── src/Voxify.Host/       # Основное приложение
-│   ├── Config/            # Настройки и конфигурация
-│   │   ├── AppSettings.cs
-│   │   └── ConfigurationManager.cs
-│   ├── Core/              # Ядро приложения
-│   │   ├── VoskEngine.cs
-│   │   ├── AudioRecorder.cs
-│   │   ├── SpeechRecognizerService.cs
-│   │   ├── HotkeyManager.cs
-│   │   └── TextInputInjector.cs
-│   ├── UI/                # Пользовательский интерфейс
-│   │   └── MainForm.cs
-│   ├── Program.cs
-│   └── appsettings.json
-├── models/                # Модели Vosk (не в git)
-│   └── README.md
-├── docs/
-│   ├── plans/             # Планы реализации
-│   └── decisions/         # Архитектурные решения (ADR)
-└── README.md
-```
+The project uses **modular architecture** with separation into:
 
-## Архитектура
+- **Core** — speech recognition, hotkeys, text input (no UI dependencies)
+- **UI** — system tray, context menu (WinForms NotifyIcon)
+- **Config** — settings management (JSON)
 
-Проект использует **модульную архитектуру** с разделением на:
+See [ADR-0001](docs/decisions/ADR-0001-modular-architecture.md) for details.
 
-- **Core** — распознавание речи, хоткеи, ввод текста (без зависимостей на UI)
-- **UI** — системный трей, контекстное меню (WinForms NotifyIcon)
-- **Config** — управление настройками (JSON)
+## Technologies
 
-См. [ADR-0001](docs/decisions/ADR-0001-modular-architecture.md) для деталей.
+| Component     | Technology           | Version |
+| ------------- | -------------------- | ------- |
+| Framework     | .NET                 | 10.0    |
+| Language      | C#                   | 13      |
+| Recognition   | Vosk                 | 0.3.38  |
+| Audio         | NAudio               | 2.2.1   |
+| Text Input    | InputSimulator       | 1.0.4   |
+| UI            | System.Windows.Forms | built-in |
+| Configuration | System.Text.Json     | built-in |
 
-## Технологии
+## Known Limitations
 
-| Компонент | Технология | Версия |
-|-----------|------------|--------|
-| Фреймворк | .NET | 10.0 |
-| Язык | C# | 13 |
-| Распознавание | Vosk | 0.3.38 |
-| Аудио | NAudio | 2.2.1 |
-| Ввод текста | InputSimulator | 1.0.4 |
-| UI | System.Windows.Forms | встроен |
-| Конфигурация | System.Text.Json | встроен |
+- ⚠️ **Windows Only** — uses WinForms and Windows API
+- ⚠️ **Doesn't Work in Games** — anti-cheats may block keyboard emulation
+- ⚠️ **Recognition Accuracy** — depends on model (small ~77-90%, large ~94-95%)
+- ⚠️ **InputSimulator Warning** — package built for .NET Framework, but works correctly
 
-## Статус разработки
+## Development Plan
 
-✅ **Phase 1**: Настройка проекта и инфраструктуры  
-✅ **Phase 2**: Ядро распознавания (Vosk + NAudio)  
-✅ **Phase 3**: Менеджер горячих клавиш  
-✅ **Phase 4**: Ввод текста (InputSimulator)  
-✅ **Phase 5**: UI (системный трей)  
-✅ **Phase 6**: Конфигурация и настройки  
-🔄 **Phase 7**: Интеграция и полировка *(в процессе)*
+See [Implementation Plan](docs/plans/2026-02-26-voxify-mvp.md) for details.
 
-## Известные ограничения
+### Future Improvements
 
-- ⚠️ **Только Windows** — используется WinForms и Windows API
-- ⚠️ **Не работает в играх** — античиты могут блокировать эмуляцию клавиатуры
-- ⚠️ **Точность распознавания** — зависит от модели (малые ~77-90%, большие ~94-95%)
-- ⚠️ **Предупреждение InputSimulator** — пакет собран для .NET Framework, но работает корректно
+- [ ] Settings GUI window
+- [ ] Support for multiple languages simultaneously
+- [ ] Recognized text history
+- [ ] Macros for frequent phrases
+- [ ] Auto-correction of common errors
+- [ ] Status indication (icon color)
 
-## План разработки
+## License
 
-См. [План реализации](docs/plans/2026-02-26-voxify-mvp.md) для деталей.
+MIT License — see [LICENSE](LICENSE) file.
 
-### Будущие улучшения
-
-- [ ] Окно настроек с GUI
-- [ ] Поддержка нескольких языков одновременно
-- [ ] История распознанного текста
-- [ ] Макросы для частых фраз
-- [ ] Авто-коррекция популярных ошибок
-- [ ] Индикация состояния (цвет иконки)
-
-## Лицензия
-
-MIT License — см. [LICENSE](LICENSE) файл.
-
-## Ссылки
+## Links
 
 - [Vosk Documentation](https://alphacephei.com/vosk/)
 - [Vosk Models](https://alphacephei.com/vosk/models)
@@ -204,8 +168,8 @@ MIT License — см. [LICENSE](LICENSE) файл.
 
 ## Contributing
 
-Приветствуются issue и pull requests!
+Issues and pull requests are welcome!
 
 ---
 
-**Voxify** — голосовой ввод для всех. 🎤
+**Voxify** — voice input for everyone. 🎤

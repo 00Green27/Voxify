@@ -1,22 +1,22 @@
 namespace Voxify.Config;
 
 /// <summary>
-/// Модель горячей клавиши с модификаторами.
+/// Hotkey model with modifiers.
 /// </summary>
 public class HotkeyConfig
 {
     /// <summary>
-    /// Модификаторы (Ctrl, Alt, Shift, Win).
+    /// Modifiers (Ctrl, Alt, Shift, Win).
     /// </summary>
     public List<string> Modifiers { get; set; } = ["Control"];
-    
+
     /// <summary>
-    /// Основная клавиша (например, F12).
+    /// Main key (e.g., F12).
     /// </summary>
     public string Key { get; set; } = "F12";
-    
+
     /// <summary>
-    /// Парсит строку модификатора в Windows API код.
+    /// Parses modifier string to Windows API code.
     /// </summary>
     public static int GetModifierCode(string modifier) => modifier.ToLower() switch
     {
@@ -26,9 +26,9 @@ public class HotkeyConfig
         "win" => 0x8,        // MOD_WIN
         _ => 0
     };
-    
+
     /// <summary>
-    /// Получает комбинированный код модификаторов.
+    /// Gets combined modifier code.
     /// </summary>
     public int GetCombinedModifiers()
     {
@@ -39,9 +39,9 @@ public class HotkeyConfig
         }
         return result;
     }
-    
+
     /// <summary>
-    /// Возвращает человекочитаемое представление хоткея.
+    /// Returns human-readable hotkey representation.
     /// </summary>
     public override string ToString()
     {
@@ -52,73 +52,73 @@ public class HotkeyConfig
 }
 
 /// <summary>
-/// Настройки детекции голосовой активности (VAD).
+/// Voice Activity Detection (VAD) settings.
 /// </summary>
 public class VoiceActivityDetectionConfig
 {
     /// <summary>
-    /// Порог громкости для срабатывания (0.0 - 1.0).
+    /// Volume threshold for activation (0.0 - 1.0).
     /// </summary>
     public float SilenceThreshold { get; set; } = 0.05f;
-    
+
     /// <summary>
-    /// Минимальная длительность речи в миллисекундах.
+    /// Minimum speech duration in milliseconds.
     /// </summary>
     public int MinSpeechDurationMs { get; set; } = 500;
 }
 
 /// <summary>
-/// Настройки ввода текста.
+/// Text input settings.
 /// </summary>
 public class TextInputConfig
 {
     /// <summary>
-    /// Задержка между нажатиями клавиш в миллисекундах.
+    /// Delay between key presses in milliseconds.
     /// </summary>
     public int TypeDelayMs { get; set; } = 10;
-    
+
     /// <summary>
-    /// Вставлять через буфер обмена вместо эмуляции клавиатуры.
+    /// Paste via clipboard instead of keyboard emulation.
     /// </summary>
     public bool PasteAsClipboard { get; set; } = false;
 }
 
 /// <summary>
-/// Основные настройки приложения.
+/// Main application settings.
 /// </summary>
 public class AppSettings
 {
     /// <summary>
-    /// Путь к папке с моделью Vosk.
+    /// Path to Vosk model folder.
     /// </summary>
     public string ModelPath { get; set; } = string.Empty;
-    
+
     /// <summary>
-    /// Язык модели (ru-RU, en-US).
+    /// Model language (ru-RU, en-US).
     /// </summary>
     public string Language { get; set; } = "ru-RU";
-    
+
     /// <summary>
-    /// Настройки горячей клавиши.
+    /// Hotkey settings.
     /// </summary>
     public HotkeyConfig Hotkey { get; set; } = new();
-    
+
     /// <summary>
-    /// Настройки детекции голосовой активности.
+    /// Voice Activity Detection settings.
     /// </summary>
     public VoiceActivityDetectionConfig VoiceActivityDetection { get; set; } = new();
-    
+
     /// <summary>
-    /// Настройки ввода текста.
+    /// Text input settings.
     /// </summary>
     public TextInputConfig TextInput { get; set; } = new();
 }
 
 /// <summary>
-/// Extension methods для работы со строками.
+/// Extension methods for strings.
 /// </summary>
 public static class StringExtensions
 {
-    public static string Capitalize(this string s) => 
+    public static string Capitalize(this string s) =>
         string.IsNullOrEmpty(s) ? s : char.ToUpper(s[0]) + s[1..];
 }
