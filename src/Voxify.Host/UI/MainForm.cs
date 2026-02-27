@@ -19,6 +19,7 @@ public class MainForm : Form
     private readonly AudioRecorder _audioRecorder;
 
     private RecordingState _recordingState;
+    private TaskCompletionSource<bool>? _recordingCompletionSource;
 
     public MainForm()
     {
@@ -57,6 +58,21 @@ public class MainForm : Form
         // PushToTalk mode events
         _hotkeyManager.PushToTalkKeyDown += OnPushToTalkKeyDown;
         _hotkeyManager.PushToTalkKeyUp += OnPushToTalkKeyUp;
+
+        // Audio recorder events
+        _audioRecorder.RecordingStarted += OnRecordingStarted;
+        _audioRecorder.RecordingStopped += OnRecordingStopped;
+    }
+
+    private void OnRecordingStarted(object? sender, EventArgs e)
+    {
+        Console.WriteLine("[MainForm] Recording started");
+    }
+
+    private void OnRecordingStopped(object? sender, EventArgs e)
+    {
+        Console.WriteLine("[MainForm] Recording stopped");
+        _recordingCompletionSource?.TrySetResult(true);
     }
 
     private void InitializeUI()
@@ -194,7 +210,13 @@ public class MainForm : Form
     private async Task StartRecordingAsync()
     {
         _recordingState = RecordingState.Recording;
+        _recordingCompletionSource = new TaskCompletionSource<bool>();
         UpdateTrayIconForRecording(true);
+
+        // Start recording
+        _audioRecorder.StartRecording();
+
+        Console.WriteLine("[MainForm] StartRecording called");
 
         _notifyIcon.ShowBalloonTip(
             1000,
@@ -216,8 +238,18 @@ public class MainForm : Form
 
         try
         {
+            Console.WriteLine("[MainForm] Stopping recording...");
+
             // Stop recording
             var audioBytes = await _audioRecorder.StopRecordingAsync();
+
+            // Wait for recording to fully stop
+            if (_recordingCompletionSource != null)
+            {
+                await _recordingCompletionSource.Task.TimeoutAfter(TimeSpan.FromSeconds(2));
+            }
+
+            Console.WriteLine($"[MainForm] Audio recorded: {audioBytes.Length} bytes");
 
             if (audioBytes.Length > 0)
             {
@@ -268,6 +300,7 @@ public class MainForm : Form
         finally
         {
             _recordingState = RecordingState.Idle;
+            _recordingCompletionSource = null;
         }
     }
 

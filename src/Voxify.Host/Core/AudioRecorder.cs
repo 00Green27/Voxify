@@ -43,9 +43,19 @@ public class AudioRecorder : IDisposable
     private readonly object _lock = new();
 
     /// <summary>
+    /// Event fired when recording is started.
+    /// </summary>
+    public event EventHandler? RecordingStarted;
+
+    /// <summary>
     /// Event fired when receiving data from microphone.
     /// </summary>
     public event EventHandler<WaveBuffer>? DataAvailable;
+
+    /// <summary>
+    /// Event fired when recording is stopped.
+    /// </summary>
+    public event EventHandler? RecordingStopped;
 
     /// <summary>
     /// Event fired when speech is detected (VAD activation).
@@ -124,6 +134,9 @@ public class AudioRecorder : IDisposable
             _speechStartTime = DateTime.MinValue;
             _lastSpeechTime = DateTime.MinValue;
 
+            // Событие о начале записи
+            RecordingStarted?.Invoke(this, EventArgs.Empty);
+
             // Инициализируем VAD если нужно
             if (_recordingMode == RecordingMode.SileroVad && _vadEngine != null && !_vadEngine.IsInitialized)
             {
@@ -138,6 +151,8 @@ public class AudioRecorder : IDisposable
     /// </summary>
     public async Task<byte[]> StopRecordingAsync()
     {
+        Console.WriteLine($"[AudioRecorder] StopRecordingAsync called, _isRecording={_isRecording}, _audioStream length={_audioStream?.Length ?? 0}");
+
         if (!_isRecording)
         {
             return Array.Empty<byte>();
@@ -155,9 +170,12 @@ public class AudioRecorder : IDisposable
 
         if (_audioStream != null)
         {
-            return _audioStream.ToArray();
+            var data = _audioStream.ToArray();
+            Console.WriteLine($"[AudioRecorder] StopRecordingAsync returning {data.Length} bytes");
+            return data;
         }
 
+        Console.WriteLine("[AudioRecorder] StopRecordingAsync: audioStream is null");
         return Array.Empty<byte>();
     }
 
@@ -173,11 +191,13 @@ public class AudioRecorder : IDisposable
     {
         if (_audioStream == null || e.Buffer == null)
         {
+            Console.WriteLine("[AudioRecorder] DataAvailable: buffer or stream is null");
             return;
         }
 
         // Всегда записываем в буфер
         _audioStream.Write(e.Buffer, 0, e.BytesRecorded);
+        Console.WriteLine($"[AudioRecorder] DataAvailable: {e.BytesRecorded} bytes, total: {_audioStream.Length} bytes");
         DataAvailable?.Invoke(this, new WaveBuffer(e.Buffer, 0, e.BytesRecorded));
 
         // Обрабатываем VAD если нужно
@@ -313,6 +333,9 @@ public class AudioRecorder : IDisposable
         _isRecording = false;
         _isSpeechDetected = false;
         _speechStartTime = DateTime.MinValue;
+
+        // Событие об остановке записи
+        RecordingStopped?.Invoke(this, EventArgs.Empty);
 
         // Сбрасываем VAD
         if (_recordingMode == RecordingMode.SileroVad && _vadEngine != null)
