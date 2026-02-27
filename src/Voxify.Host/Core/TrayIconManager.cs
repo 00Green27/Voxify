@@ -1,5 +1,6 @@
 using System.Drawing;
 using Microsoft.Win32;
+using System.Runtime.InteropServices;
 using Voxify.Config;
 
 namespace Voxify.Core;
@@ -28,6 +29,12 @@ public enum IconTheme
 /// </summary>
 public class TrayIconManager : IDisposable
 {
+    // P/Invoke for proper icon handle cleanup
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool DestroyIcon(IntPtr hIcon);
+
+    private readonly Dictionary<(TrayIconState, IconTheme), IntPtr> _iconHandles;
     private readonly Dictionary<(TrayIconState, IconTheme), Icon> _iconCache;
     private readonly NotifyIcon _notifyIcon;
     private readonly DebugService _debugService;
@@ -45,6 +52,7 @@ public class TrayIconManager : IDisposable
         _notifyIcon = notifyIcon;
         _debugService = debugService;
         _iconCache = new Dictionary<(TrayIconState, IconTheme), Icon>();
+        _iconHandles = new Dictionary<(TrayIconState, IconTheme), IntPtr>();
         _currentState = TrayIconState.Idle;
         _currentTheme = GetSystemTheme();
 
@@ -91,8 +99,8 @@ public class TrayIconManager : IDisposable
                     using var stream = assembly.GetManifestResourceStream(resourceName);
                     if (stream != null)
                     {
-                        var icon = CreateIconFromPng(stream, 32);
                         var key = ParseIconKey(kvp.Value);
+                        var icon = CreateIconFromPng(stream, 32, key);
                         _iconCache[key] = icon;
                         _debugService.Log("TrayIcon", $"Loaded icon: {resourceName}", LogLevel.Debug);
                     }
@@ -132,13 +140,17 @@ public class TrayIconManager : IDisposable
     }
 
     /// <summary>
-    /// Creates an Icon from a PNG stream.
+    /// Creates an Icon from a PNG stream and stores the handle for cleanup.
     /// </summary>
-    private static Icon CreateIconFromPng(Stream pngStream, int size)
+    private Icon CreateIconFromPng(Stream pngStream, int size, (TrayIconState, IconTheme) key)
     {
         using var bitmap = new Bitmap(pngStream);
         using var resized = new Bitmap(bitmap, new Size(size, size));
         var iconPtr = resized.GetHicon();
+        
+        // Store handle for later cleanup
+        _iconHandles[key] = iconPtr;
+        
         return Icon.FromHandle(iconPtr);
     }
 
@@ -233,11 +245,12 @@ public class TrayIconManager : IDisposable
         {
             SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
 
-            // Dispose all cached icons
-            foreach (var icon in _iconCache.Values)
+            // Properly destroy all icon handles to prevent GDI leaks
+            foreach (var handle in _iconHandles.Values)
             {
-                icon?.Dispose();
+                DestroyIcon(handle);
             }
+            _iconHandles.Clear();
             _iconCache.Clear();
 
             _disposed = true;

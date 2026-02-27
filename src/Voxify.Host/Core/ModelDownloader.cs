@@ -29,6 +29,10 @@ public class ModelDownloader : IDisposable
     private bool _disposed;
 
     // Predefined models list
+    // Note: Checksums are currently disabled. To add them:
+    // 1. Download the model ZIP file
+    // 2. Run: sha256sum vosk-model-small-ru-0.22.zip
+    // 3. Add the hash to ExpectedChecksum field
     public static readonly List<ModelInfo> AvailableModels = new()
     {
         new ModelInfo
@@ -38,7 +42,7 @@ public class ModelDownloader : IDisposable
             Provider = "Vosk",
             Language = "ru-RU",
             DownloadUrl = "https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22.zip",
-            ExpectedChecksum = string.Empty, // Empty = skip checksum validation
+            ExpectedChecksum = string.Empty, // TODO: Add SHA256 checksum when available
             ExpectedSizeBytes = 47_185_920, // ~45 MB actual size
             Description = "Малая русская модель Vosk (~45 МБ)"
         },
@@ -49,7 +53,7 @@ public class ModelDownloader : IDisposable
             Provider = "Vosk",
             Language = "en-US",
             DownloadUrl = "https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip",
-            ExpectedChecksum = string.Empty, // Empty = skip checksum validation
+            ExpectedChecksum = string.Empty, // TODO: Add SHA256 checksum when available
             ExpectedSizeBytes = 41_943_040, // ~40 MB actual size
             Description = "Малая английская модель Vosk (~40 МБ)"
         }
