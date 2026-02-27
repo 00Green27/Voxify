@@ -14,6 +14,8 @@ Voice text input for Windows using Vosk — offline speech recognition with inpu
 - 📝 **Input to Any Application** — text insertion via keyboard emulation
 - 🛠️ **Minimalistic UI** — system tray icon
 - 🌐 **Multilingual** — Russian and English support
+- 🧠 **Smart VAD** — Silero ML-based Voice Activity Detection (optional)
+- 🔇 **Silence Filtering** — auto-detect speech start/end, skip silence
 
 ## Requirements
 
@@ -109,7 +111,14 @@ Settings file: `%APPDATA%\Voxify\appsettings.json`
 | `Language` | Model language (ru-RU, en-US) | `"ru-RU"` |
 | `Hotkey.Modifiers` | Modifiers (Control, Alt, Shift, Win) | `["Control"]` |
 | `Hotkey.Key` | Key (F1-F12, A-Z, 0-9) | `"F12"` |
+| `Hotkey.Mode` | Hotkey mode: `Toggle` or `PushToTalk` | `"Toggle"` |
+| `VoiceActivityDetection.Enabled` | Enable VAD (Voice Activity Detection) | `false` |
+| `VoiceActivityDetection.Mode` | VAD mode: `simple` or `silero` | `"simple"` |
 | `VoiceActivityDetection.SilenceThreshold` | Volume threshold (0.0-1.0) | `0.05` |
+| `VoiceActivityDetection.MinSpeechDurationMs` | Min speech duration before recording starts (ms) | `500` |
+| `VoiceActivityDetection.MinSilenceDurationMs` | Min silence duration before recording stops (ms) | `500` |
+| `VoiceActivityDetection.SileroModelPath` | Path to Silero VAD ONNX model | `models\vad\silero_vad.onnx` |
+| `VoiceActivityDetection.SileroConfigPath` | Path to Silero VAD YAML config | `models\vad\vad.yaml` |
 | `TextInput.TypeDelayMs` | Delay between characters (ms) | `10` |
 | `TextInput.PasteAsClipboard` | Paste via clipboard | `false` |
 

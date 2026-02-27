@@ -39,6 +39,7 @@ public class VoskEngine : IDisposable
 
     /// <summary>
     /// Creates a new VoskRecognizer instance for recognition session.
+    /// Configures optimal settings for CPU efficiency.
     /// </summary>
     public Vosk.VoskRecognizer CreateRecognizer()
     {
@@ -47,7 +48,16 @@ public class VoskEngine : IDisposable
             throw new InvalidOperationException("Model is not initialized. Call InitializeAsync first.");
         }
 
-        return new Vosk.VoskRecognizer(_model, 16000.0f);
+        var recognizer = new Vosk.VoskRecognizer(_model, 16000.0f);
+        
+        // Disable word-level timestamps and partial results for better CPU performance
+        // Words by timestamp are not needed
+        // Partial results cause unnecessary CPU usage
+        // We only need final text output
+        recognizer.SetWords(false);
+        recognizer.SetPartialWords(false);
+        
+        return recognizer;
     }
 
     /// <summary>

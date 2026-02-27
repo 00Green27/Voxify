@@ -61,8 +61,9 @@ public class SpeechRecognizerService : ISpeechRecognizer
             // Recognize via Vosk
             using var recognizer = _voskEngine.CreateRecognizer();
 
-            // Accept audio data in 4KB chunks
-            int chunkSize = 4096;
+            // Accept audio data in chunks
+            // Chunk size optimized for 30ms buffer at 16kHz, 16-bit mono
+            int chunkSize = 960; // 30ms * 16000 Hz * 2 bytes = 960 bytes
             for (int i = 0; i < audioBytes.Length; i += chunkSize)
             {
                 int remaining = audioBytes.Length - i;
@@ -81,7 +82,7 @@ public class SpeechRecognizerService : ISpeechRecognizer
                 }
             }
 
-            // Final result (partial)
+            // Final result
             var finalResult = recognizer.FinalResult();
             return ExtractTextFromResult(finalResult);
         }
@@ -105,7 +106,7 @@ public class SpeechRecognizerService : ISpeechRecognizer
             return null;
         }
 
-        // Vosk возвращает JSON вида: {"text": "распознанный текст"}
+        // Vosk returns JSON like: {"text": "recognized text"}
         try
         {
             using var doc = System.Text.Json.JsonDocument.Parse(jsonResult);
@@ -116,7 +117,7 @@ public class SpeechRecognizerService : ISpeechRecognizer
         }
         catch
         {
-            // Если не удалось распарсить JSON, возвращаем как есть
+            // If JSON parsing fails, return as is
             return jsonResult;
         }
 

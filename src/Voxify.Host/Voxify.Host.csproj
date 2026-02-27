@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <!-- Speech Recognition -->
+    <PackageReference Include="ManySpeech.SileroVad" Version="1.1.2" />
     <PackageReference Include="Vosk" Version="0.3.38" />
     
     <!-- Audio Processing -->
