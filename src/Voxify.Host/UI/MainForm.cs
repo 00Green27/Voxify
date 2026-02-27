@@ -17,9 +17,11 @@ public class MainForm : Form
     private readonly TextInputInjector _textInputInjector;
     private readonly VoskEngine _voskEngine;
     private readonly AudioRecorder _audioRecorder;
+    private readonly IpcServer _ipcServer;
 
     private RecordingState _recordingState;
     private TaskCompletionSource<bool>? _recordingCompletionSource;
+    private bool _debugMode;
 
     public MainForm()
     {
@@ -39,9 +41,15 @@ public class MainForm : Form
 
         // Initialize state
         _recordingState = RecordingState.Idle;
+        _debugMode = false;
 
         // Configure UI
         InitializeUI();
+
+        // Initialize IPC server
+        _ipcServer = new IpcServer();
+        _ipcServer.CommandReceivedAsync += OnIpcCommandReceivedAsync;
+        _ipcServer.Start();
 
         // Subscribe to events
         SubscribeToEvents();
@@ -320,11 +328,87 @@ public class MainForm : Form
         );
     }
 
+    /// <summary>
+    /// Обработка команд от IPC клиента (CLI).
+    /// </summary>
+    private async Task<IpcResponse> OnIpcCommandReceivedAsync(IpcCommand command)
+    {
+        Console.WriteLine($"[MainForm] Получена IPC команда: {command.Type}");
+
+        try
+        {
+            switch (command.Type.ToLower())
+            {
+                case "toggle":
+                    await HandleToggleCommand();
+                    return new IpcResponse { Success = true, Message = "Toggle command processed" };
+
+                case "cancel":
+                    await HandleCancelCommand();
+                    return new IpcResponse { Success = true, Message = "Cancel command processed" };
+
+                case "status":
+                    return await HandleStatusCommand();
+
+                case "debug":
+                    return await HandleDebugCommand();
+
+                default:
+                    Console.WriteLine($"[MainForm] Неизвестная команда: {command.Type}");
+                    return new IpcResponse { Success = false, Message = $"Unknown command: {command.Type}" };
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MainForm] Error processing command {command.Type}: {ex.Message}");
+            return new IpcResponse { Success = false, Message = ex.Message };
+        }
+    }
+
+    private async Task HandleToggleCommand()
+    {
+        if (_recordingState == RecordingState.Idle)
+        {
+            await StartRecordingAsync();
+        }
+        else if (_recordingState == RecordingState.Recording)
+        {
+            await StopRecordingAndRecognizeAsync();
+        }
+    }
+
+    private async Task HandleCancelCommand()
+    {
+        if (_recordingState == RecordingState.Recording)
+        {
+            await _audioRecorder.ForceStopAsync();
+            _recordingState = RecordingState.Idle;
+            UpdateTrayIconForRecording(false);
+            Console.WriteLine("[MainForm] Recording cancelled via CLI");
+        }
+    }
+
+    private async Task<IpcResponse> HandleStatusCommand()
+    {
+        var status = _recordingState.ToString();
+        Console.WriteLine($"[MainForm] Status: {status}");
+        return new IpcResponse { Success = true, Message = "Status retrieved", Data = status };
+    }
+
+    private async Task<IpcResponse> HandleDebugCommand()
+    {
+        _debugMode = !_debugMode;
+        var status = _debugMode ? "enabled" : "disabled";
+        Console.WriteLine($"[MainForm] Debug mode: {status}");
+        return new IpcResponse { Success = true, Message = "Debug mode toggled", Data = status };
+    }
+
     private void OnExitClick(object? sender, EventArgs e)
     {
         _notifyIcon.Visible = false;
         _hotkeyManager.Dispose();
         _speechRecognizer.Dispose();
+        _ipcServer.Dispose();
         Application.Exit();
     }
 

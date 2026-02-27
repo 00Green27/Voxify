@@ -16,6 +16,7 @@ Voice text input for Windows using Vosk — offline speech recognition with inpu
 - 🌐 **Multilingual** — Russian and English support
 - 🧠 **Smart VAD** — Silero ML-based Voice Activity Detection (optional)
 - 🔇 **Silence Filtering** — auto-detect speech start/end, skip silence
+- 💻 **CLI Control** — manage Voxify from command line
 
 ## Requirements
 
@@ -73,6 +74,29 @@ dotnet publish -c Release -o ./publish
 2. **Configure**: On first launch, specify model path in settings
 3. **Record**: Press hotkey (default `Ctrl+F12`) → speak → release
 4. **Result**: Recognized text will be automatically inserted into active field
+
+### CLI Control
+
+Manage Voxify from command line:
+
+```bash
+# Get status
+voxify status
+
+# Toggle recording
+voxify toggle
+
+# Cancel current recording
+voxify cancel
+
+# Toggle debug mode
+voxify debug
+
+# Show help
+voxify help
+```
+
+See [CLI Documentation](docs/CLI.md) for details.
 
 ### Hotkeys (default)
 

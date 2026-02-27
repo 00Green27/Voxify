@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Voxify.Host/Voxify.Host.csproj" />
+    <Project Path="src/Voxify.Cli/Voxify.Cli.csproj" />
   </Folder>
 </Solution>
