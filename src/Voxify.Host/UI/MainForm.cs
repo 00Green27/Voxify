@@ -20,6 +20,7 @@ public class MainForm : Form
     private readonly IpcServer _ipcServer;
     private readonly RecognizerFactory _recognizerFactory;
     private readonly DebugService _debugService;
+    private readonly SystemIntegration _systemIntegration;
     private DebugWindow? _debugWindow;
 
     private ISpeechRecognizer? _speechRecognizer;
@@ -45,6 +46,7 @@ public class MainForm : Form
         _hotkeyManager = new HotkeyManager();
         _debugHotkeyManager = new HotkeyManager();
         _textInputInjector = new TextInputInjector(_configManager.Settings.TextInput);
+        _systemIntegration = new SystemIntegration();
 
         // Initialize state
         _recordingState = RecordingState.Idle;
@@ -79,6 +81,13 @@ public class MainForm : Form
 
         // Debug hotkey events
         _debugHotkeyManager.HotkeyPressed += OnDebugHotkeyPressed;
+
+        // System integration events
+        _systemIntegration.SessionEnding += OnSessionEnding;
+        _systemIntegration.DisplaySettingsChanged += OnDisplaySettingsChanged;
+
+        // Subscribe to system events
+        _systemIntegration.SubscribeToSystemEvents();
     }
 
     private void OnRecordingStarted(object? sender, EventArgs e)
@@ -100,6 +109,64 @@ public class MainForm : Form
             _debugWindow = new DebugWindow(_debugService);
         }
         _debugWindow.Show();
+    }
+
+    private void OnSessionEnding(object? sender, Microsoft.Win32.SessionEndingEventArgs e)
+    {
+        // Graceful shutdown on Windows exit
+        _debugService?.Log("System", $"Session ending: {e.Reason}", LogLevel.Info);
+        
+        // Stop recording if active
+        if (_recordingState == RecordingState.Recording)
+        {
+            _audioRecorder.ForceStopAsync().Wait(1000);
+            _recordingState = RecordingState.Idle;
+        }
+    }
+
+    private void OnDisplaySettingsChanged(object? sender, EventArgs e)
+    {
+        // Handle display settings change (e.g., resolution change)
+        _debugService?.Log("System", "Display settings changed", LogLevel.Debug);
+    }
+
+    /// <summary>
+    /// Handles command line arguments from external sources (second instance or CLI).
+    /// </summary>
+    public void HandleExternalArguments(string arguments)
+    {
+        _debugService?.Log("External", $"Received arguments: {arguments}", LogLevel.Info);
+
+        // Parse arguments
+        var args = arguments.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (args.Length == 0)
+            return;
+
+        var command = args[0].ToLower().TrimStart('-');
+
+        switch (command)
+        {
+            case "toggle":
+            case "toggle-transcription":
+                HandleToggleCommand().Wait();
+                break;
+
+            case "cancel":
+                HandleCancelCommand().Wait();
+                break;
+
+            case "debug":
+                HandleDebugCommand().Wait();
+                break;
+
+            case "status":
+                // Status is handled via IPC response
+                break;
+
+            default:
+                _debugService?.Log("External", $"Unknown command: {command}", LogLevel.Warning);
+                break;
+        }
     }
 
     private void InitializeUI()
@@ -514,6 +581,7 @@ public class MainForm : Form
         _debugHotkeyManager.Dispose();
         _speechRecognizer?.Dispose();
         _ipcServer.Dispose();
+        _systemIntegration.Dispose();
         _debugService.Dispose();
         Application.Exit();
     }

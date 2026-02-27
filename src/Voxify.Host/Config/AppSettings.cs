@@ -183,6 +183,27 @@ public class DebugConfig
 }
 
 /// <summary>
+/// System integration settings.
+/// </summary>
+public class SystemIntegrationConfig
+{
+    /// <summary>
+    /// Enable single instance mode (only one instance can run at a time).
+    /// </summary>
+    public bool SingleInstance { get; set; } = true;
+
+    /// <summary>
+    /// Enable auto-start on Windows login.
+    /// </summary>
+    public bool AutoStart { get; set; } = false;
+
+    /// <summary>
+    /// Start minimized (hidden) on startup.
+    /// </summary>
+    public bool StartHidden { get; set; } = false;
+}
+
+/// <summary>
 /// Main application settings.
 /// </summary>
 public class AppSettings
@@ -221,6 +242,11 @@ public class AppSettings
     /// Debug mode settings.
     /// </summary>
     public DebugConfig Debug { get; set; } = new();
+
+    /// <summary>
+    /// System integration settings.
+    /// </summary>
+    public SystemIntegrationConfig SystemIntegration { get; set; } = new();
 }
 
 /// <summary>
