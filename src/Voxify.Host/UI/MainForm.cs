@@ -18,6 +18,8 @@ public class MainForm : Form
     private readonly VoskEngine _voskEngine;
     private readonly AudioRecorder _audioRecorder;
 
+    private RecordingState _recordingState;
+
     public MainForm()
     {
         // Initialize components
@@ -34,14 +36,27 @@ public class MainForm : Form
         _hotkeyManager = new HotkeyManager();
         _textInputInjector = new TextInputInjector(_configManager.Settings.TextInput);
 
+        // Initialize state
+        _recordingState = RecordingState.Idle;
+
         // Configure UI
         InitializeUI();
 
         // Subscribe to events
-        _hotkeyManager.HotkeyPressed += OnHotkeyPressed;
+        SubscribeToEvents();
 
         // Initialize the application
         InitializeAsync();
+    }
+
+    private void SubscribeToEvents()
+    {
+        // Toggle mode events
+        _hotkeyManager.HotkeyPressed += OnHotkeyPressed;
+
+        // PushToTalk mode events
+        _hotkeyManager.PushToTalkKeyDown += OnPushToTalkKeyDown;
+        _hotkeyManager.PushToTalkKeyUp += OnPushToTalkKeyUp;
     }
 
     private void InitializeUI()
@@ -69,6 +84,25 @@ public class MainForm : Form
 
         // Handle double click
         _notifyIcon.DoubleClick += (s, e) => ShowForm();
+    }
+
+    /// <summary>
+    /// Updates tray icon based on recording state.
+    /// </summary>
+    private void UpdateTrayIconForRecording(bool isRecording)
+    {
+        if (isRecording)
+        {
+            // Green icon for recording state
+            _notifyIcon.Icon = SystemIcons.Application;
+            _notifyIcon.Text = $"Voxify — Recording... (Mode: {_hotkeyManager.Mode})";
+        }
+        else
+        {
+            // Default icon for idle state
+            _notifyIcon.Icon = SystemIcons.Application;
+            _notifyIcon.Text = "Voxify — Voice Input";
+        }
     }
 
     private async void InitializeAsync()
@@ -128,37 +162,96 @@ public class MainForm : Form
 
     private async void OnHotkeyPressed(object? sender, EventArgs e)
     {
-        // Show notification about recording start
+        // Toggle mode: start/stop recording
+        if (_recordingState == RecordingState.Idle)
+        {
+            await StartRecordingAsync();
+        }
+        else if (_recordingState == RecordingState.Recording)
+        {
+            await StopRecordingAndRecognizeAsync();
+        }
+    }
+
+    private async void OnPushToTalkKeyDown(object? sender, EventArgs e)
+    {
+        // PushToTalk: start recording on key down
+        if (_recordingState == RecordingState.Idle)
+        {
+            await StartRecordingAsync();
+        }
+    }
+
+    private async void OnPushToTalkKeyUp(object? sender, EventArgs e)
+    {
+        // PushToTalk: stop recording on key up
+        if (_recordingState == RecordingState.Recording)
+        {
+            await StopRecordingAndRecognizeAsync();
+        }
+    }
+
+    private async Task StartRecordingAsync()
+    {
+        _recordingState = RecordingState.Recording;
+        UpdateTrayIconForRecording(true);
+
         _notifyIcon.ShowBalloonTip(
             1000,
             "Voxify",
             "Recording speech...",
             ToolTipIcon.Info
         );
+    }
+
+    private async Task StopRecordingAndRecognizeAsync()
+    {
+        if (_recordingState != RecordingState.Recording)
+        {
+            return;
+        }
+
+        _recordingState = RecordingState.Processing;
+        UpdateTrayIconForRecording(false);
 
         try
         {
-            // Recognize speech (max 10 seconds)
-            var text = await _speechRecognizer.RecognizeFromMicrophoneAsync(10);
+            // Stop recording
+            var audioBytes = await _audioRecorder.StopRecordingAsync();
 
-            if (!string.IsNullOrEmpty(text))
+            if (audioBytes.Length > 0)
             {
-                // Insert text
-                _textInputInjector.TypeText(text);
+                // Recognize
+                var text = await _speechRecognizer.RecognizeAsync(audioBytes);
 
-                _notifyIcon.ShowBalloonTip(
-                    2000,
-                    "Voxify",
-                    $"Recognized: {text}",
-                    ToolTipIcon.Info
-                );
+                if (!string.IsNullOrEmpty(text))
+                {
+                    // Insert text
+                    _textInputInjector.TypeText(text);
+
+                    _notifyIcon.ShowBalloonTip(
+                        2000,
+                        "Voxify",
+                        $"Recognized: {text}",
+                        ToolTipIcon.Info
+                    );
+                }
+                else
+                {
+                    _notifyIcon.ShowBalloonTip(
+                        2000,
+                        "Voxify",
+                        "Speech not recognized",
+                        ToolTipIcon.Info
+                    );
+                }
             }
             else
             {
                 _notifyIcon.ShowBalloonTip(
                     2000,
                     "Voxify",
-                    "Speech not recognized",
+                    "No audio recorded",
                     ToolTipIcon.Info
                 );
             }
@@ -171,6 +264,10 @@ public class MainForm : Form
                 $"Recognition error: {ex.Message}",
                 ToolTipIcon.Error
             );
+        }
+        finally
+        {
+            _recordingState = RecordingState.Idle;
         }
     }
 

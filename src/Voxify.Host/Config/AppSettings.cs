@@ -6,6 +6,11 @@ namespace Voxify.Config;
 public class HotkeyConfig
 {
     /// <summary>
+    /// Hotkey mode: Toggle (press to start/stop) or PushToTalk (hold to record).
+    /// </summary>
+    public string Mode { get; set; } = "Toggle";
+
+    /// <summary>
     /// Modifiers (Ctrl, Alt, Shift, Win).
     /// </summary>
     public List<string> Modifiers { get; set; } = ["Control"];
@@ -58,16 +63,6 @@ public class VoiceActivityDetectionConfig
 {
     /// <summary>
     /// Включить ли VAD на базе ML.
-    /// </summary>
-    public bool Enabled { get; set; } = false;
-
-    /// <summary>
-    /// Тип VAD: "simple" (порог громкости) или "silero" (ML модель).
-    /// </summary>
-    public string Mode { get; set; } = "simple";
-
-    /// <summary>
-    /// Volume threshold for activation (0.0 - 1.0) - для режима "simple".
     /// </summary>
     public bool Enabled { get; set; } = false;
 
