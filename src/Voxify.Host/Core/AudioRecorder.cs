@@ -41,6 +41,7 @@ public class AudioRecorder : IDisposable
     private readonly int _minSilenceDurationMs;
     private readonly IVadEngine? _vadEngine;
     private readonly object _lock = new();
+    private readonly DebugService? _debugService;
 
     /// <summary>
     /// Event fired when recording is started.
@@ -85,18 +86,21 @@ public class AudioRecorder : IDisposable
     /// <param name="minSpeechDurationMs">Минимальная длительность речи (мс).</param>
     /// <param name="minSilenceDurationMs">Минимальная длительность тишины для остановки (мс).</param>
     /// <param name="vadEngine">VAD двигатель для SileroVad режима.</param>
+    /// <param name="debugService">Сервис отладки для логирования.</param>
     public AudioRecorder(
         RecordingMode recordingMode = RecordingMode.Always,
         float silenceThreshold = 0.05f,
         int minSpeechDurationMs = 500,
         int minSilenceDurationMs = 500,
-        IVadEngine? vadEngine = null)
+        IVadEngine? vadEngine = null,
+        DebugService? debugService = null)
     {
         _recordingMode = recordingMode;
         _silenceThreshold = silenceThreshold;
         _minSpeechDurationMs = minSpeechDurationMs;
         _minSilenceDurationMs = minSilenceDurationMs;
         _vadEngine = vadEngine;
+        _debugService = debugService;
 
         if (recordingMode == RecordingMode.SileroVad && vadEngine == null)
         {
@@ -114,6 +118,12 @@ public class AudioRecorder : IDisposable
             throw new InvalidOperationException("Recording is already in progress");
         }
 
+        // Check if microphone is available
+        if (!IsMicrophoneAvailable())
+        {
+            throw new InvalidOperationException("No microphone devices available. Please check your audio input settings.");
+        }
+
         lock (_lock)
         {
             _audioStream = new MemoryStream();
@@ -128,20 +138,32 @@ public class AudioRecorder : IDisposable
             _waveIn.DataAvailable += OnDataAvailable;
             _waveIn.RecordingStopped += OnRecordingStopped;
 
-            _waveIn.StartRecording();
-            _isRecording = true;
-            _isSpeechDetected = _recordingMode == RecordingMode.Always;
-            _speechStartTime = DateTime.MinValue;
-            _lastSpeechTime = DateTime.MinValue;
-
-            // Событие о начале записи
-            RecordingStarted?.Invoke(this, EventArgs.Empty);
-
-            // Инициализируем VAD если нужно
-            if (_recordingMode == RecordingMode.SileroVad && _vadEngine != null && !_vadEngine.IsInitialized)
+            try
             {
-                // VAD должен быть инициализирован заранее
-                Console.WriteLine("[AudioRecorder] VAD engine should be initialized before recording");
+                _waveIn.StartRecording();
+                _isRecording = true;
+                _isSpeechDetected = _recordingMode == RecordingMode.Always;
+                _speechStartTime = DateTime.MinValue;
+                _lastSpeechTime = DateTime.MinValue;
+
+                // Событие о начале записи
+                RecordingStarted?.Invoke(this, EventArgs.Empty);
+
+                // Инициализируем VAD если нужно
+                if (_recordingMode == RecordingMode.SileroVad && _vadEngine != null && !_vadEngine.IsInitialized)
+                {
+                    // VAD должен быть инициализирован заранее
+                    Console.WriteLine("[AudioRecorder] VAD engine should be initialized before recording");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Clean up on error
+                _waveIn?.Dispose();
+                _waveIn = null;
+                _audioStream?.Dispose();
+                _audioStream = null;
+                throw new InvalidOperationException($"Failed to start recording: {ex.Message}", ex);
             }
         }
     }
@@ -240,6 +262,9 @@ public class AudioRecorder : IDisposable
         }
         double rms = Math.Sqrt(sum / samples.Length);
 
+        // Обновляем debug state
+        _debugService?.UpdateAudioLevel((float)rms);
+
         return rms > _silenceThreshold;
     }
 
@@ -257,6 +282,10 @@ public class AudioRecorder : IDisposable
         try
         {
             var result = _vadEngine.DetectSpeech(samples);
+            
+            // Обновляем debug state
+            _debugService?.UpdateVadState(result.IsSpeech, result.Confidence);
+            
             return result.IsSpeech && result.Confidence >= _silenceThreshold;
         }
         catch (Exception ex)
@@ -286,6 +315,7 @@ public class AudioRecorder : IDisposable
             {
                 _isSpeechDetected = true;
                 _lastSpeechTime = now;
+                _debugService?.Log("AudioRecorder", "Speech started", LogLevel.Debug);
                 SpeechDetected?.Invoke(this, EventArgs.Empty);
                 Console.WriteLine($"[AudioRecorder] Speech detected at {now:HH:mm:ss.fff}");
             }
@@ -303,6 +333,7 @@ public class AudioRecorder : IDisposable
                 {
                     _isSpeechDetected = false;
                     _speechStartTime = DateTime.MinValue;
+                    _debugService?.Log("AudioRecorder", "Speech ended", LogLevel.Debug);
                     SpeechEnded?.Invoke(this, EventArgs.Empty);
                     Console.WriteLine($"[AudioRecorder] Speech ended at {now:HH:mm:ss.fff}");
                 }

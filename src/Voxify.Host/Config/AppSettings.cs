@@ -148,6 +148,41 @@ public class SpeechRecognitionConfig
 }
 
 /// <summary>
+/// Debug mode settings.
+/// </summary>
+public class DebugConfig
+{
+    /// <summary>
+    /// Enable debug mode on startup.
+    /// </summary>
+    public bool Enabled { get; set; } = false;
+
+    /// <summary>
+    /// Hotkey for opening debug window.
+    /// </summary>
+    public HotkeyConfig Hotkey { get; set; } = new()
+    {
+        Modifiers = ["Control", "Shift"],
+        Key = "D"
+    };
+
+    /// <summary>
+    /// Enable logging to file.
+    /// </summary>
+    public bool LogToFile { get; set; } = true;
+
+    /// <summary>
+    /// Path to log file (supports environment variables like %APPDATA%).
+    /// </summary>
+    public string LogPath { get; set; } = "%APPDATA%\\Voxify\\logs\\voxify.log";
+
+    /// <summary>
+    /// Maximum number of log lines to keep in memory (for debug window).
+    /// </summary>
+    public int MaxLogLines { get; set; } = 1000;
+}
+
+/// <summary>
 /// Main application settings.
 /// </summary>
 public class AppSettings
@@ -181,6 +216,11 @@ public class AppSettings
     /// Speech recognition settings (new unified config).
     /// </summary>
     public SpeechRecognitionConfig SpeechRecognition { get; set; } = new();
+
+    /// <summary>
+    /// Debug mode settings.
+    /// </summary>
+    public DebugConfig Debug { get; set; } = new();
 }
 
 /// <summary>

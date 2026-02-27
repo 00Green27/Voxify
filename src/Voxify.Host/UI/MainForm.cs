@@ -13,16 +13,18 @@ public class MainForm : Form
     private readonly ContextMenuStrip _contextMenu;
     private readonly ConfigurationManager _configManager;
     private readonly HotkeyManager _hotkeyManager;
+    private readonly HotkeyManager _debugHotkeyManager;
     private readonly TextInputInjector _textInputInjector;
     private readonly VoskEngine _voskEngine;
     private readonly AudioRecorder _audioRecorder;
     private readonly IpcServer _ipcServer;
     private readonly RecognizerFactory _recognizerFactory;
+    private readonly DebugService _debugService;
+    private DebugWindow? _debugWindow;
 
     private ISpeechRecognizer? _speechRecognizer;
     private RecordingState _recordingState;
     private TaskCompletionSource<bool>? _recordingCompletionSource;
-    private bool _debugMode;
 
     public MainForm()
     {
@@ -33,16 +35,19 @@ public class MainForm : Form
         // Load configuration
         _configManager = new ConfigurationManager();
 
+        // Create debug service first
+        _debugService = new DebugService(_configManager.Settings.Debug);
+
         // Create core components
         _voskEngine = new VoskEngine();
-        _audioRecorder = new AudioRecorder();
+        _audioRecorder = new AudioRecorder(debugService: _debugService);
         _recognizerFactory = new RecognizerFactory(_audioRecorder, _voskEngine);
         _hotkeyManager = new HotkeyManager();
+        _debugHotkeyManager = new HotkeyManager();
         _textInputInjector = new TextInputInjector(_configManager.Settings.TextInput);
 
         // Initialize state
         _recordingState = RecordingState.Idle;
-        _debugMode = false;
 
         // Configure UI
         InitializeUI();
@@ -71,6 +76,9 @@ public class MainForm : Form
         // Audio recorder events
         _audioRecorder.RecordingStarted += OnRecordingStarted;
         _audioRecorder.RecordingStopped += OnRecordingStopped;
+
+        // Debug hotkey events
+        _debugHotkeyManager.HotkeyPressed += OnDebugHotkeyPressed;
     }
 
     private void OnRecordingStarted(object? sender, EventArgs e)
@@ -82,6 +90,16 @@ public class MainForm : Form
     {
         Console.WriteLine("[MainForm] Recording stopped");
         _recordingCompletionSource?.TrySetResult(true);
+    }
+
+    private void OnDebugHotkeyPressed(object? sender, EventArgs e)
+    {
+        // Open or bring focus to debug window
+        if (_debugWindow == null)
+        {
+            _debugWindow = new DebugWindow(_debugService);
+        }
+        _debugWindow.Show();
     }
 
     private void InitializeUI()
@@ -197,6 +215,20 @@ public class MainForm : Form
                 ToolTipIcon.Error
             );
         }
+
+        // Register debug hotkey
+        try
+        {
+            _debugHotkeyManager.RegisterHotkey(_configManager.Settings.Debug.Hotkey);
+            _debugService.Log("MainForm", $"Debug hotkey registered: {_configManager.Settings.Debug.Hotkey}", LogLevel.Info);
+        }
+        catch (Exception ex)
+        {
+            _debugService.Log("MainForm", $"Failed to register debug hotkey: {ex.Message}", LogLevel.Error);
+        }
+
+        // Set speech provider in debug service
+        _debugService.SetSpeechProvider(_configManager.Settings.SpeechRecognition.Provider);
     }
 
     private async void OnHotkeyPressed(object? sender, EventArgs e)
@@ -232,21 +264,42 @@ public class MainForm : Form
 
     private async Task StartRecordingAsync()
     {
-        _recordingState = RecordingState.Recording;
-        _recordingCompletionSource = new TaskCompletionSource<bool>();
-        UpdateTrayIconForRecording(true);
+        try
+        {
+            _recordingState = RecordingState.Recording;
+            _recordingCompletionSource = new TaskCompletionSource<bool>();
+            UpdateTrayIconForRecording(true);
 
-        // Start recording
-        _audioRecorder.StartRecording();
+            // Start recording
+            _audioRecorder.StartRecording();
 
-        Console.WriteLine("[MainForm] StartRecording called");
+            _debugService?.UpdateRecordingState(_recordingState, true);
+            _debugService?.Log("MainForm", "Recording started", LogLevel.Info);
 
-        _notifyIcon.ShowBalloonTip(
-            1000,
-            "Voxify",
-            "Recording speech...",
-            ToolTipIcon.Info
-        );
+            Console.WriteLine("[MainForm] StartRecording called");
+
+            _notifyIcon.ShowBalloonTip(
+                1000,
+                "Voxify",
+                "Recording speech...",
+                ToolTipIcon.Info
+            );
+        }
+        catch (Exception ex)
+        {
+            _debugService?.Log("MainForm", $"Failed to start recording: {ex.Message}", LogLevel.Error);
+            
+            _notifyIcon.ShowBalloonTip(
+                5000,
+                "Voxify — Error",
+                $"Failed to start recording: {ex.Message}",
+                ToolTipIcon.Error
+            );
+            
+            // Reset state
+            _recordingState = RecordingState.Idle;
+            UpdateTrayIconForRecording(false);
+        }
     }
 
     private async Task StopRecordingAndRecognizeAsync()
@@ -258,6 +311,7 @@ public class MainForm : Form
 
         _recordingState = RecordingState.Processing;
         UpdateTrayIconForRecording(false);
+        _debugService?.UpdateRecordingState(_recordingState, false);
 
         try
         {
@@ -273,6 +327,7 @@ public class MainForm : Form
             }
 
             Console.WriteLine($"[MainForm] Audio recorded: {audioBytes.Length} bytes");
+            _debugService?.Log("MainForm", $"Audio recorded: {audioBytes.Length} bytes", LogLevel.Debug);
 
             if (audioBytes.Length > 0)
             {
@@ -283,8 +338,14 @@ public class MainForm : Form
 
                     if (!string.IsNullOrEmpty(text))
                     {
+                        // Log raw text
+                        _debugService?.SetRawText(text);
+
                         // Insert text
                         _textInputInjector.TypeText(text);
+
+                        // Log processed text (same as raw for now)
+                        _debugService?.SetProcessedText(text);
 
                         _notifyIcon.ShowBalloonTip(
                             2000,
@@ -331,11 +392,13 @@ public class MainForm : Form
                 $"Recognition error: {ex.Message}",
                 ToolTipIcon.Error
             );
+            _debugService?.Log("MainForm", $"Recognition error: {ex.Message}", LogLevel.Error);
         }
         finally
         {
             _recordingState = RecordingState.Idle;
             _recordingCompletionSource = null;
+            _debugService?.UpdateRecordingState(_recordingState, false);
         }
     }
 
@@ -424,9 +487,23 @@ public class MainForm : Form
 
     private async Task<IpcResponse> HandleDebugCommand()
     {
-        _debugMode = !_debugMode;
-        var status = _debugMode ? "enabled" : "disabled";
+        // Toggle debug mode via service
+        var newState = !_debugService.IsEnabled;
+        _debugService.SetEnabled(newState);
+        
+        var status = newState ? "enabled" : "disabled";
         Console.WriteLine($"[MainForm] Debug mode: {status}");
+        
+        // Open debug window if enabling
+        if (newState)
+        {
+            if (_debugWindow == null)
+            {
+                _debugWindow = new DebugWindow(_debugService);
+            }
+            _debugWindow.Show();
+        }
+        
         return new IpcResponse { Success = true, Message = "Debug mode toggled", Data = status };
     }
 
@@ -434,8 +511,10 @@ public class MainForm : Form
     {
         _notifyIcon.Visible = false;
         _hotkeyManager.Dispose();
+        _debugHotkeyManager.Dispose();
         _speechRecognizer?.Dispose();
         _ipcServer.Dispose();
+        _debugService.Dispose();
         Application.Exit();
     }
 
