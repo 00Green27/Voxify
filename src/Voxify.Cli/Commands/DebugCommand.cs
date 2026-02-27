@@ -1,19 +1,19 @@
 namespace Voxify.Cli.Commands;
 
 /// <summary>
-/// Команда: Включение/выключение режима отладки (debug).
+/// Command: Toggle debug mode (debug).
 /// </summary>
 public class DebugCommand
 {
     public static async Task<int> ExecuteAsync(Ipc.IpcClient client)
     {
-        Console.WriteLine("[DebugCommand] Переключение режима отладки...");
+        Console.WriteLine("[DebugCommand] Toggling debug mode...");
 
         var response = await client.SendCommandAsync("debug");
 
         if (response == null)
         {
-            Console.Error.WriteLine("Ошибка: Не получен ответ от сервера.");
+            Console.Error.WriteLine("Error: No response from server.");
             return 1;
         }
 
@@ -22,13 +22,13 @@ public class DebugCommand
             Console.WriteLine($"✓ {response.Message}");
             if (!string.IsNullOrEmpty(response.Data))
             {
-                Console.WriteLine($"  Режим отладки: {response.Data}");
+                Console.WriteLine($"  Debug mode: {response.Data}");
             }
             return 0;
         }
         else
         {
-            Console.Error.WriteLine($"✗ Ошибка: {response.Message}");
+            Console.Error.WriteLine($"✗ Error: {response.Message}");
             return 1;
         }
     }

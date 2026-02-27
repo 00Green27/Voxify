@@ -62,17 +62,17 @@ public class HotkeyConfig
 public class VoiceActivityDetectionConfig
 {
     /// <summary>
-    /// Включить ли VAD на базе ML.
+    /// Enable ML-based VAD.
     /// </summary>
     public bool Enabled { get; set; } = false;
 
     /// <summary>
-    /// Тип VAD: "simple" (порог громкости) или "silero" (ML модель).
+    /// VAD mode: "simple" (volume threshold) or "silero" (ML model).
     /// </summary>
     public string Mode { get; set; } = "simple";
 
     /// <summary>
-    /// Volume threshold for activation (0.0 - 1.0) - для режима "simple".
+    /// Volume threshold for activation (0.0 - 1.0) - for "simple" mode.
     /// </summary>
     public float SilenceThreshold { get; set; } = 0.05f;
 
@@ -82,22 +82,22 @@ public class VoiceActivityDetectionConfig
     public int MinSpeechDurationMs { get; set; } = 500;
 
     /// <summary>
-    /// Minimum silence duration before stopping recording (ms) - для режима "silero".
+    /// Minimum silence duration before stopping recording (ms) - for "silero" mode.
     /// </summary>
     public int MinSilenceDurationMs { get; set; } = 500;
 
     /// <summary>
-    /// Порог уверенности для детекции речи (0.0 - 1.0) - для режима "silero".
+    /// Speech confidence threshold (0.0 - 1.0) - for "silero" mode.
     /// </summary>
     public float SpeechThreshold { get; set; } = 0.5f;
 
     /// <summary>
-    /// Путь к модели Silero VAD (ONNX файл) - для режима "silero".
+    /// Path to Silero VAD model (ONNX file) - for "silero" mode.
     /// </summary>
     public string SileroModelPath { get; set; } = string.Empty;
 
     /// <summary>
-    /// Путь к конфигурации Silero VAD (YAML файл) - для режима "silero".
+    /// Path to Silero VAD config (YAML file) - for "silero" mode.
     /// </summary>
     public string SileroConfigPath { get; set; } = string.Empty;
 }

@@ -21,6 +21,7 @@ public class MainForm : Form
     private readonly RecognizerFactory _recognizerFactory;
     private readonly DebugService _debugService;
     private readonly SystemIntegration _systemIntegration;
+    private readonly PerformanceService _performanceService;
     private DebugWindow? _debugWindow;
 
     private ISpeechRecognizer? _speechRecognizer;
@@ -47,6 +48,7 @@ public class MainForm : Form
         _debugHotkeyManager = new HotkeyManager();
         _textInputInjector = new TextInputInjector(_configManager.Settings.TextInput);
         _systemIntegration = new SystemIntegration();
+        _performanceService = new PerformanceService(_debugService);
 
         // Initialize state
         _recordingState = RecordingState.Idle;
@@ -171,7 +173,7 @@ public class MainForm : Form
 
     private void InitializeUI()
     {
-        // Скрываем форму из taskbar
+        // Hide form from taskbar
         this.ShowInTaskbar = false;
         this.WindowState = FormWindowState.Minimized;
         this.FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -303,6 +305,7 @@ public class MainForm : Form
         // Toggle mode: start/stop recording
         if (_recordingState == RecordingState.Idle)
         {
+            _performanceService.OnHotkeyPressed();
             await StartRecordingAsync();
         }
         else if (_recordingState == RecordingState.Recording)
@@ -339,6 +342,7 @@ public class MainForm : Form
 
             // Start recording
             _audioRecorder.StartRecording();
+            _performanceService.OnRecordingStarted();
 
             _debugService?.UpdateRecordingState(_recordingState, true);
             _debugService?.Log("MainForm", "Recording started", LogLevel.Info);
@@ -395,6 +399,7 @@ public class MainForm : Form
 
             Console.WriteLine($"[MainForm] Audio recorded: {audioBytes.Length} bytes");
             _debugService?.Log("MainForm", $"Audio recorded: {audioBytes.Length} bytes", LogLevel.Debug);
+            _performanceService.OnRecordingStopped();
 
             if (audioBytes.Length > 0)
             {
@@ -402,6 +407,7 @@ public class MainForm : Form
                 if (_speechRecognizer != null && _speechRecognizer.IsInitialized)
                 {
                     var text = await _speechRecognizer.RecognizeAsync(audioBytes);
+                    _performanceService.OnRecognitionComplete();
 
                     if (!string.IsNullOrEmpty(text))
                     {
@@ -410,6 +416,7 @@ public class MainForm : Form
 
                         // Insert text
                         _textInputInjector.TypeText(text);
+                        _performanceService.OnTextInjected();
 
                         // Log processed text (same as raw for now)
                         _debugService?.SetProcessedText(text);
@@ -486,11 +493,11 @@ public class MainForm : Form
     }
 
     /// <summary>
-    /// Обработка команд от IPC клиента (CLI).
+    /// Handles commands from IPC client (CLI).
     /// </summary>
     private async Task<IpcResponse> OnIpcCommandReceivedAsync(IpcCommand command)
     {
-        Console.WriteLine($"[MainForm] Получена IPC команда: {command.Type}");
+        Console.WriteLine($"[MainForm] Received IPC command: {command.Type}");
 
         try
         {
@@ -511,7 +518,7 @@ public class MainForm : Form
                     return await HandleDebugCommand();
 
                 default:
-                    Console.WriteLine($"[MainForm] Неизвестная команда: {command.Type}");
+                    Console.WriteLine($"[MainForm] Unknown command: {command.Type}");
                     return new IpcResponse { Success = false, Message = $"Unknown command: {command.Type}" };
             }
         }
@@ -586,6 +593,14 @@ public class MainForm : Form
         Application.Exit();
     }
 
+    /// <summary>
+    /// Gets current performance metrics.
+    /// </summary>
+    public PerformanceMetrics GetPerformanceMetrics()
+    {
+        return _performanceService.GetMetrics();
+    }
+
     private void ShowForm()
     {
         if (WindowState == FormWindowState.Minimized)
@@ -594,7 +609,7 @@ public class MainForm : Form
         ShowInTaskbar = true;
         Activate();
 
-        // Скрываем обратно
+        // Hide back
         WindowState = FormWindowState.Minimized;
         ShowInTaskbar = false;
     }

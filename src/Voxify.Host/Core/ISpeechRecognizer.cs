@@ -1,23 +1,23 @@
 namespace Voxify.Core;
 
 /// <summary>
-/// Провайдер распознавания речи.
+/// Speech recognition provider.
 /// </summary>
 public enum SpeechProvider
 {
     /// <summary>
-    /// Vosk — офлайн распознавание через модель Vosk.
+    /// Vosk — offline recognition via Vosk model.
     /// </summary>
     Vosk,
 
     /// <summary>
-    /// Whisper — офлайн распознавание через модель Whisper.
+    /// Whisper — offline recognition via Whisper model.
     /// </summary>
     Whisper
 }
 
 /// <summary>
-/// Интерфейс для компонента распознавания речи.
+/// Interface for speech recognition component.
 /// </summary>
 public interface ISpeechRecognizer : IDisposable
 {
@@ -27,17 +27,17 @@ public interface ISpeechRecognizer : IDisposable
     SpeechProvider Provider { get; }
 
     /// <summary>
-    /// Инициализирует распознаватель с указанной моделью.
+    /// Initializes the recognizer with the specified model.
     /// </summary>
     Task InitializeAsync(string modelPath, string language);
 
     /// <summary>
-    /// Распознаёт речь из аудио-данных.
+    /// Recognizes speech from audio data.
     /// </summary>
     Task<string?> RecognizeAsync(byte[] audioData, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Проверяет, инициализирован ли распознаватель.
+    /// Checks if the recognizer is initialized.
     /// </summary>
     bool IsInitialized { get; }
 }

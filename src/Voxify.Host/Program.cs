@@ -5,7 +5,7 @@ using Voxify.UI;
 namespace Voxify;
 
 /// <summary>
-/// Точка входа приложения Voxify.
+/// Entry point for Voxify application.
 /// </summary>
 public static class Program
 {

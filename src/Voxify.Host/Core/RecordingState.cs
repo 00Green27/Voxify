@@ -1,22 +1,22 @@
 namespace Voxify.Core;
 
 /// <summary>
-/// Состояние процесса записи.
+/// Recording process state.
 /// </summary>
 public enum RecordingState
 {
     /// <summary>
-    /// Бездействие (запись не активна).
+    /// Idle (recording not active).
     /// </summary>
     Idle,
 
     /// <summary>
-    /// Идёт запись.
+    /// Recording in progress.
     /// </summary>
     Recording,
 
     /// <summary>
-    /// Обработка распознанного текста.
+    /// Processing recognized text.
     /// </summary>
     Processing
 }

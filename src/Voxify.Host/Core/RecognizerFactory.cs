@@ -1,7 +1,7 @@
 namespace Voxify.Core;
 
 /// <summary>
-/// Фабрика для создания распознавателей речи.
+/// Factory for creating speech recognizers.
 /// </summary>
 public class RecognizerFactory
 {
@@ -15,10 +15,10 @@ public class RecognizerFactory
     }
 
     /// <summary>
-    /// Создаёт распознаватель речи на основе конфигурации.
+    /// Creates a speech recognizer based on configuration.
     /// </summary>
-    /// <param name="provider">Провайдер распознавания.</param>
-    /// <returns>Распознаватель речи.</returns>
+    /// <param name="provider">Speech provider.</param>
+    /// <returns>Speech recognizer.</returns>
     public ISpeechRecognizer CreateRecognizer(SpeechProvider provider)
     {
         return provider switch
@@ -30,10 +30,10 @@ public class RecognizerFactory
     }
 
     /// <summary>
-    /// Создаёт распознаватель речи на основе строкового имени провайдера.
+    /// Creates a speech recognizer based on string provider name.
     /// </summary>
-    /// <param name="providerName">Имя провайдера: "Vosk" или "Whisper".</param>
-    /// <returns>Распознаватель речи.</returns>
+    /// <param name="providerName">Provider name: "Vosk" or "Whisper".</param>
+    /// <returns>Speech recognizer.</returns>
     public ISpeechRecognizer CreateRecognizer(string providerName)
     {
         var provider = providerName.ToLower() switch
@@ -47,7 +47,7 @@ public class RecognizerFactory
     }
 
     /// <summary>
-    /// Создаёт Vosk распознаватель.
+    /// Creates Vosk recognizer.
     /// </summary>
     private ISpeechRecognizer CreateVoskRecognizer()
     {
@@ -55,7 +55,7 @@ public class RecognizerFactory
     }
 
     /// <summary>
-    /// Создаёт Whisper распознаватель.
+    /// Creates Whisper recognizer.
     /// </summary>
     private ISpeechRecognizer CreateWhisperRecognizer()
     {

@@ -12,7 +12,7 @@
     <RootNamespace>Voxify</RootNamespace>
     <Version>0.1.0</Version>
     <Authors>Voxify Team</Authors>
-    <Description>Голосовой ввод текста для Windows с использованием Vosk</Description>
+    <Description>Voice text input for Windows using Vosk/Whisper</Description>
     
     <!-- Build Settings -->
     <WarningLevel>4</WarningLevel>

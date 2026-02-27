@@ -1,62 +1,62 @@
 namespace Voxify.Core;
 
 /// <summary>
-/// Интерфейс для детектора голосовой активности (VAD).
+/// Interface for Voice Activity Detection (VAD) engine.
 /// </summary>
 public interface IVadEngine : IDisposable
 {
     /// <summary>
-    /// Инициализирует VAD модель.
+    /// Initializes the VAD model.
     /// </summary>
-    /// <param name="modelPath">Путь к ONNX модели.</param>
-    /// <param name="configPath">Путь к YAML конфигурации.</param>
+    /// <param name="modelPath">Path to ONNX model.</param>
+    /// <param name="configPath">Path to YAML config.</param>
     Task InitializeAsync(string modelPath, string configPath);
 
     /// <summary>
-    /// Обрабатывает аудио сэмпл и возвращает результат детекции речи.
+    /// Processes audio sample and returns speech detection result.
     /// </summary>
-    /// <param name="samples">Массив аудио сэмплов (float, нормализованный -1.0 до 1.0).</param>
-    /// <returns>Результат детекции речи.</returns>
+    /// <param name="samples">Audio samples array (float, normalized -1.0 to 1.0).</param>
+    /// <returns>Speech detection result.</returns>
     VadResult DetectSpeech(float[] samples);
 
     /// <summary>
-    /// Сбрасывает состояние VAD для новой сессии.
+    /// Resets VAD state for a new session.
     /// </summary>
     void Reset();
 
     /// <summary>
-    /// Проверяет, инициализирована ли модель.
+    /// Checks if the model is initialized.
     /// </summary>
     bool IsInitialized { get; }
 }
 
 /// <summary>
-/// Результат детекции речи.
+/// Speech detection result.
 /// </summary>
 public class VadResult
 {
     /// <summary>
-    /// Обнаружена ли речь.
+    /// Whether speech is detected.
     /// </summary>
     public bool IsSpeech { get; init; }
 
     /// <summary>
-    /// Уверенность детекции (0.0 - 1.0).
+    /// Detection confidence (0.0 - 1.0).
     /// </summary>
     public float Confidence { get; init; }
 
     /// <summary>
-    /// Начало речи в миллисекундах (относительно начала потока).
+    /// Speech start in milliseconds (relative to stream start).
     /// </summary>
     public long SpeechStartMs { get; init; }
 
     /// <summary>
-    /// Конец речи в миллисекундах (относительно начала потока).
+    /// Speech end in milliseconds (relative to stream start).
     /// </summary>
     public long SpeechEndMs { get; init; }
 
     /// <summary>
-    /// Пустой результат (нет речи).
+    /// Empty result (no speech).
     /// </summary>
     public static VadResult Empty => new()
     {

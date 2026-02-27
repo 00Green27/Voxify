@@ -4,17 +4,17 @@ using Voxify.Config;
 namespace Voxify.Core;
 
 /// <summary>
-/// Режим горячей клавиши.
+/// Hotkey mode.
 /// </summary>
 public enum HotkeyMode
 {
     /// <summary>
-    /// Toggle: нажал — начало записи, нажал ещё раз — конец.
+    /// Toggle: press to start recording, press again to stop.
     /// </summary>
     Toggle,
 
     /// <summary>
-    /// PushToTalk: удерживаешь — запись, отпустил — стоп.
+    /// PushToTalk: hold to record, release to stop.
     /// </summary>
     PushToTalk
 }

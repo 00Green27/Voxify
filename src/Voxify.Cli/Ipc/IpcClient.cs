@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace Voxify.Cli.Ipc;
 
 /// <summary>
-/// IPC клиент для отправки команд в Voxify.Host через Named Pipes.
+/// IPC client for sending commands to Voxify.Host via Named Pipes.
 /// </summary>
 public class IpcClient : IDisposable
 {
@@ -14,7 +14,7 @@ public class IpcClient : IDisposable
     private bool _disposed;
 
     /// <summary>
-    /// Подключается к IPC серверу.
+    /// Connects to the IPC server.
     /// </summary>
     public async Task<bool> ConnectAsync(int timeoutMs = 2000)
     {
@@ -26,7 +26,7 @@ public class IpcClient : IDisposable
         }
         catch (TimeoutException)
         {
-            Console.Error.WriteLine("[IpcClient] Timeout: Voxify.Host не запущен или IPC сервер недоступен.");
+            Console.Error.WriteLine("[IpcClient] Timeout: Voxify.Host is not running or IPC server is unavailable.");
             return false;
         }
         catch (Exception ex)
@@ -37,7 +37,7 @@ public class IpcClient : IDisposable
     }
 
     /// <summary>
-    /// Отправляет команду и получает ответ.
+    /// Sends a command and receives a response.
     /// </summary>
     public async Task<IpcResponse?> SendCommandAsync(string commandType, Dictionary<string, string>? parameters = null)
     {
@@ -49,22 +49,22 @@ public class IpcClient : IDisposable
 
         try
         {
-            // Создаём команду
+            // Create command
             var command = new IpcCommand
             {
                 Type = commandType,
                 Parameters = parameters
             };
 
-            // Сериализуем в JSON
+            // Serialize to JSON
             var json = JsonSerializer.Serialize(command);
             var bytes = Encoding.UTF8.GetBytes(json);
 
-            // Отправляем
+            // Send
             await _pipe.WriteAsync(bytes, 0, bytes.Length);
             await _pipe.FlushAsync();
 
-            // Читаем ответ
+            // Read response
             var buffer = new byte[1024];
             var length = await _pipe.ReadAsync(buffer, 0, buffer.Length);
 
@@ -94,7 +94,7 @@ public class IpcClient : IDisposable
 }
 
 /// <summary>
-/// IPC команда.
+/// IPC command.
 /// </summary>
 public class IpcCommand
 {
@@ -103,7 +103,7 @@ public class IpcCommand
 }
 
 /// <summary>
-/// IPC ответ.
+/// IPC response.
 /// </summary>
 public class IpcResponse
 {

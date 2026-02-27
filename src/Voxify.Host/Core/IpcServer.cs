@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace Voxify.Core;
 
 /// <summary>
-/// IPC сервер для приёма команд от CLI клиента через Named Pipes.
+/// IPC server for receiving commands from CLI client via Named Pipes.
 /// </summary>
 public class IpcServer : IDisposable
 {
@@ -15,17 +15,17 @@ public class IpcServer : IDisposable
     private bool _disposed;
 
     /// <summary>
-    /// Событие при получении команды (синхронная обработка).
+    /// Event fired when a command is received (synchronous handling).
     /// </summary>
     public event EventHandler<IpcCommandReceivedEventArgs>? CommandReceived;
 
     /// <summary>
-    /// Событие при получении команды (асинхронная обработка с ответом).
+    /// Event fired when a command is received (asynchronous handling with response).
     /// </summary>
     public event Func<IpcCommand, Task<IpcResponse>>? CommandReceivedAsync;
 
     /// <summary>
-    /// Запускает IPC сервер.
+    /// Starts the IPC server.
     /// </summary>
     public void Start()
     {
@@ -33,7 +33,7 @@ public class IpcServer : IDisposable
     }
 
     /// <summary>
-    /// Останавливает IPC сервер.
+    /// Stops the IPC server.
     /// </summary>
     public void Stop()
     {
@@ -49,10 +49,10 @@ public class IpcServer : IDisposable
             {
                 using var pipeServer = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Message, PipeOptions.Asynchronous);
 
-                // Ждём подключения клиента
+                // Wait for client connection
                 await pipeServer.WaitForConnectionAsync(cancellationToken);
 
-                // Читаем команду
+                // Read command
                 var buffer = new byte[1024];
                 var length = await pipeServer.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
 
@@ -65,19 +65,19 @@ public class IpcServer : IDisposable
                     {
                         IpcResponse response;
 
-                        // Пробуем асинхронную обработку
+                        // Try asynchronous handling
                         if (CommandReceivedAsync != null)
                         {
                             response = await CommandReceivedAsync.Invoke(command);
                         }
                         else
                         {
-                            // Синхронная обработка (для обратной совместимости)
+                            // Synchronous handling (for backward compatibility)
                             CommandReceived?.Invoke(this, new IpcCommandReceivedEventArgs(command));
                             response = new IpcResponse { Success = true, Message = $"Command '{command.Type}' processed" };
                         }
 
-                        // Отправляем ответ
+                        // Send response
                         var responseJson = JsonSerializer.Serialize(response);
                         var responseBytes = Encoding.UTF8.GetBytes(responseJson);
 
@@ -93,7 +93,7 @@ public class IpcServer : IDisposable
             }
             catch (Exception ex)
             {
-                // Логгируем ошибку, но продолжаем работу
+                // Log error but continue running
                 Console.WriteLine($"[IpcServer] Error: {ex.Message}");
             }
         }
@@ -111,23 +111,23 @@ public class IpcServer : IDisposable
 }
 
 /// <summary>
-/// IPC команда от CLI клиента.
+/// IPC command from CLI client.
 /// </summary>
 public class IpcCommand
 {
     /// <summary>
-    /// Тип команды: toggle, cancel, status, debug.
+    /// Command type: toggle, cancel, status, debug.
     /// </summary>
     public string Type { get; set; } = string.Empty;
 
     /// <summary>
-    /// Дополнительные параметры команды.
+    /// Additional command parameters.
     /// </summary>
     public Dictionary<string, string>? Parameters { get; set; }
 }
 
 /// <summary>
-/// IPC ответ от сервера.
+/// IPC response from server.
 /// </summary>
 public class IpcResponse
 {
@@ -137,7 +137,7 @@ public class IpcResponse
 }
 
 /// <summary>
-/// Аргументы события получения команды.
+/// Command received event arguments.
 /// </summary>
 public class IpcCommandReceivedEventArgs : EventArgs
 {

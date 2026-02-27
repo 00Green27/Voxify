@@ -1,19 +1,19 @@
 namespace Voxify.Cli.Commands;
 
 /// <summary>
-/// Команда: Переключение режима записи (toggle transcription).
+/// Command: Toggle recording mode (toggle transcription).
 /// </summary>
 public class ToggleCommand
 {
     public static async Task<int> ExecuteAsync(Ipc.IpcClient client)
     {
-        Console.WriteLine("[ToggleCommand] Отправка команды переключения записи...");
+        Console.WriteLine("[ToggleCommand] Sending toggle recording command...");
 
         var response = await client.SendCommandAsync("toggle");
 
         if (response == null)
         {
-            Console.Error.WriteLine("Ошибка: Не получен ответ от сервера.");
+            Console.Error.WriteLine("Error: No response from server.");
             return 1;
         }
 
@@ -24,7 +24,7 @@ public class ToggleCommand
         }
         else
         {
-            Console.Error.WriteLine($"✗ Ошибка: {response.Message}");
+            Console.Error.WriteLine($"✗ Error: {response.Message}");
             return 1;
         }
     }

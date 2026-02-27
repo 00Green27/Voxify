@@ -3,22 +3,22 @@ using NAudio.Wave;
 namespace Voxify.Core;
 
 /// <summary>
-/// Режим работы рекордера.
+/// Recorder operating mode.
 /// </summary>
 public enum RecordingMode
 {
     /// <summary>
-    /// Запись без VAD (всегда записывает).
+    /// Recording without VAD (always records).
     /// </summary>
     Always,
 
     /// <summary>
-    /// Запись запускается при детекции речи (простой порог громкости).
+    /// Recording starts on speech detection (simple volume threshold).
     /// </summary>
     SimpleVad,
 
     /// <summary>
-    /// Запись запускается при детекции речи (ML модель Silero).
+    /// Recording starts on speech detection (Silero ML model).
     /// </summary>
     SileroVad
 }
@@ -69,24 +69,24 @@ public class AudioRecorder : IDisposable
     public event EventHandler? SpeechEnded;
 
     /// <summary>
-    /// Проверяет, идёт ли запись.
+    /// Checks if recording is in progress.
     /// </summary>
     public bool IsRecording => _isRecording;
 
     /// <summary>
-    /// Проверяет, обнаружена ли речь (для VAD режимов).
+    /// Checks if speech is detected (for VAD modes).
     /// </summary>
     public bool IsSpeechDetected => _isSpeechDetected;
 
     /// <summary>
-    /// Создаёт новый экземпляр AudioRecorder с VAD поддержкой.
+    /// Creates a new AudioRecorder instance with VAD support.
     /// </summary>
-    /// <param name="recordingMode">Режим записи.</param>
-    /// <param name="silenceThreshold">Порог тишины для SimpleVAD (0.0-1.0).</param>
-    /// <param name="minSpeechDurationMs">Минимальная длительность речи (мс).</param>
-    /// <param name="minSilenceDurationMs">Минимальная длительность тишины для остановки (мс).</param>
-    /// <param name="vadEngine">VAD двигатель для SileroVad режима.</param>
-    /// <param name="debugService">Сервис отладки для логирования.</param>
+    /// <param name="recordingMode">Recording mode.</param>
+    /// <param name="silenceThreshold">Silence threshold for SimpleVAD (0.0-1.0).</param>
+    /// <param name="minSpeechDurationMs">Minimum speech duration in milliseconds.</param>
+    /// <param name="minSilenceDurationMs">Minimum silence duration before stopping (ms).</param>
+    /// <param name="vadEngine">VAD engine for SileroVad mode.</param>
+    /// <param name="debugService">Debug service for logging.</param>
     public AudioRecorder(
         RecordingMode recordingMode = RecordingMode.Always,
         float silenceThreshold = 0.05f,
@@ -104,7 +104,7 @@ public class AudioRecorder : IDisposable
 
         if (recordingMode == RecordingMode.SileroVad && vadEngine == null)
         {
-            throw new ArgumentException("VadEngine должен быть предоставлен для режима SileroVad");
+            throw new ArgumentException("VadEngine must be provided for SileroVad mode");
         }
     }
 
@@ -146,13 +146,13 @@ public class AudioRecorder : IDisposable
                 _speechStartTime = DateTime.MinValue;
                 _lastSpeechTime = DateTime.MinValue;
 
-                // Событие о начале записи
+                // Recording started event
                 RecordingStarted?.Invoke(this, EventArgs.Empty);
 
-                // Инициализируем VAD если нужно
+                // Initialize VAD if needed
                 if (_recordingMode == RecordingMode.SileroVad && _vadEngine != null && !_vadEngine.IsInitialized)
                 {
-                    // VAD должен быть инициализирован заранее
+                    // VAD should be initialized beforehand
                     Console.WriteLine("[AudioRecorder] VAD engine should be initialized before recording");
                 }
             }
@@ -202,7 +202,7 @@ public class AudioRecorder : IDisposable
     }
 
     /// <summary>
-    /// Принудительно останавливает запись и возвращает аудио.
+    /// Force stops recording and returns audio.
     /// </summary>
     public async Task<byte[]> ForceStopAsync()
     {
@@ -217,12 +217,12 @@ public class AudioRecorder : IDisposable
             return;
         }
 
-        // Всегда записываем в буфер
+        // Always write to buffer
         _audioStream.Write(e.Buffer, 0, e.BytesRecorded);
         Console.WriteLine($"[AudioRecorder] DataAvailable: {e.BytesRecorded} bytes, total: {_audioStream.Length} bytes");
         DataAvailable?.Invoke(this, new WaveBuffer(e.Buffer, 0, e.BytesRecorded));
 
-        // Обрабатываем VAD если нужно
+        // Process VAD if needed
         if (_recordingMode != RecordingMode.Always)
         {
             ProcessVad(e.Buffer, e.BytesRecorded);
@@ -231,7 +231,7 @@ public class AudioRecorder : IDisposable
 
     private void ProcessVad(byte[] buffer, int bytesRecorded)
     {
-        // Конвертируем в float сэмплы (-1.0 до 1.0)
+        // Convert to float samples (-1.0 to 1.0)
         float[] samples = BufferToFloatSamples(buffer, bytesRecorded);
 
         bool speechDetected = _recordingMode switch
@@ -245,7 +245,7 @@ public class AudioRecorder : IDisposable
     }
 
     /// <summary>
-    /// Простой детектор речи по порогу громкости.
+    /// Simple speech detector by volume threshold.
     /// </summary>
     private bool DetectSimpleVad(float[] samples)
     {
@@ -254,7 +254,7 @@ public class AudioRecorder : IDisposable
             return false;
         }
 
-        // Вычисляем среднеквадратичную амплитуду (RMS)
+        // Calculate RMS (Root Mean Square) amplitude
         double sum = 0;
         foreach (var sample in samples)
         {
@@ -262,20 +262,20 @@ public class AudioRecorder : IDisposable
         }
         double rms = Math.Sqrt(sum / samples.Length);
 
-        // Обновляем debug state
+        // Update debug state
         _debugService?.UpdateAudioLevel((float)rms);
 
         return rms > _silenceThreshold;
     }
 
     /// <summary>
-    /// Детектор речи на базе Silero VAD.
+    /// Speech detector based on Silero VAD.
     /// </summary>
     private bool DetectSileroVad(float[] samples)
     {
         if (_vadEngine == null || !_vadEngine.IsInitialized)
         {
-            // Fallback на простой VAD если Silero не инициализирован
+            // Fallback to simple VAD if Silero is not initialized
             return DetectSimpleVad(samples);
         }
 
@@ -283,7 +283,7 @@ public class AudioRecorder : IDisposable
         {
             var result = _vadEngine.DetectSpeech(samples);
             
-            // Обновляем debug state
+            // Update debug state
             _debugService?.UpdateVadState(result.IsSpeech, result.Confidence);
             
             return result.IsSpeech && result.Confidence >= _silenceThreshold;
@@ -296,7 +296,7 @@ public class AudioRecorder : IDisposable
     }
 
     /// <summary>
-    /// Обрабатывает состояние речи (начало/конец).
+    /// Handles speech state (start/end).
     /// </summary>
     private void HandleSpeechState(bool detected)
     {
@@ -304,13 +304,13 @@ public class AudioRecorder : IDisposable
 
         if (!_isSpeechDetected && detected)
         {
-            // Потенциальное начало речи
+            // Potential speech start
             if (_speechStartTime == DateTime.MinValue)
             {
                 _speechStartTime = now;
             }
 
-            // Проверяем, прошла ли минимальная длительность
+            // Check if minimum duration passed
             if ((now - _speechStartTime).TotalMilliseconds >= _minSpeechDurationMs)
             {
                 _isSpeechDetected = true;
@@ -328,7 +328,7 @@ public class AudioRecorder : IDisposable
             }
             else
             {
-                // Проверяем, прошла ли минимальная длительность тишины
+                // Check if minimum silence duration passed
                 if ((now - _lastSpeechTime).TotalMilliseconds >= _minSilenceDurationMs)
                 {
                     _isSpeechDetected = false;
@@ -342,7 +342,7 @@ public class AudioRecorder : IDisposable
     }
 
     /// <summary>
-    /// Конвертирует byte[] буфер в float[] сэмплы (-1.0 до 1.0).
+    /// Converts byte[] buffer to float[] samples (-1.0 to 1.0).
     /// </summary>
     private static float[] BufferToFloatSamples(byte[] buffer, int bytesRecorded)
     {
@@ -365,10 +365,10 @@ public class AudioRecorder : IDisposable
         _isSpeechDetected = false;
         _speechStartTime = DateTime.MinValue;
 
-        // Событие об остановке записи
+        // Recording stopped event
         RecordingStopped?.Invoke(this, EventArgs.Empty);
 
-        // Сбрасываем VAD
+        // Reset VAD
         if (_recordingMode == RecordingMode.SileroVad && _vadEngine != null)
         {
             _vadEngine.Reset();

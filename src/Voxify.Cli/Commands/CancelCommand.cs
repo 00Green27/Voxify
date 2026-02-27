@@ -1,19 +1,19 @@
 namespace Voxify.Cli.Commands;
 
 /// <summary>
-/// Команда: Отмена текущей операции (cancel).
+/// Command: Cancel current operation (cancel).
 /// </summary>
 public class CancelCommand
 {
     public static async Task<int> ExecuteAsync(Ipc.IpcClient client)
     {
-        Console.WriteLine("[CancelCommand] Отправка команды отмены...");
+        Console.WriteLine("[CancelCommand] Sending cancel command...");
 
         var response = await client.SendCommandAsync("cancel");
 
         if (response == null)
         {
-            Console.Error.WriteLine("Ошибка: Не получен ответ от сервера.");
+            Console.Error.WriteLine("Error: No response from server.");
             return 1;
         }
 
@@ -24,7 +24,7 @@ public class CancelCommand
         }
         else
         {
-            Console.Error.WriteLine($"✗ Ошибка: {response.Message}");
+            Console.Error.WriteLine($"✗ Error: {response.Message}");
             return 1;
         }
     }

@@ -11,7 +11,7 @@
     <RootNamespace>Voxify.Cli</RootNamespace>
     <Version>0.1.0</Version>
     <Authors>Voxify Team</Authors>
-    <Description>CLI утилита для управления Voxify</Description>
+    <Description>CLI utility for managing Voxify</Description>
   </PropertyGroup>
 
 </Project>

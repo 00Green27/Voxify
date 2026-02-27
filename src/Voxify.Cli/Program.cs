@@ -4,7 +4,7 @@ using Voxify.Cli.Ipc;
 namespace Voxify.Cli;
 
 /// <summary>
-/// Voxify CLI - утилита командной строки для управления Voxify.Host.
+/// Voxify CLI - command-line utility for managing Voxify.Host.
 /// </summary>
 public class Program
 {
@@ -16,21 +16,21 @@ public class Program
             return 1;
         }
 
-        // Парсим аргументы
+        // Parse arguments
         var command = args[0].TrimStart('-').ToLower();
 
-        // Создаём IPC клиент
+        // Create IPC client
         using var client = new IpcClient();
 
-        // Подключаемся к серверу
+        // Connect to server
         if (!await client.ConnectAsync())
         {
-            Console.Error.WriteLine("Ошибка: Не удалось подключиться к Voxify.Host.");
-            Console.Error.WriteLine("Убедитесь, что Voxify запущен.");
+            Console.Error.WriteLine("Error: Failed to connect to Voxify.Host.");
+            Console.Error.WriteLine("Make sure Voxify is running.");
             return 1;
         }
 
-        // Выполняем команду
+        // Execute command
         if (command == "toggle" || command == "toggle-transcription")
         {
             return await ToggleCommand.ExecuteAsync(client);
@@ -54,7 +54,7 @@ public class Program
         }
         else
         {
-            Console.Error.WriteLine($"Неизвестная команда: {command}");
+            Console.Error.WriteLine($"Unknown command: {command}");
             PrintHelp();
             return 1;
         }
@@ -62,24 +62,24 @@ public class Program
 
     private static void PrintHelp()
     {
-        Console.WriteLine(@"Voxify CLI - утилита для управления Voxify
+        Console.WriteLine(@"Voxify CLI - utility for managing Voxify
 
-Использование:
-  voxify <команда>
+Usage:
+  voxify <command>
 
-Команды:
-  toggle, toggle-transcription   Переключить режим записи (старт/стоп)
-  cancel                         Отменить текущую операцию
-  status                         Показать текущий статус приложения
-  debug                          Включить/выключить режим отладки
-  help                           Показать эту справку
+Commands:
+  toggle, toggle-transcription   Toggle recording mode (start/stop)
+  cancel                         Cancel current operation
+  status                         Show current application status
+  debug                          Enable/disable debug mode
+  help                           Show this help message
 
-Примеры:
-  voxify toggle                  Начать/остановить запись
-  voxify status                  Узнать текущее состояние
-  voxify cancel                  Отменить распознавание
+Examples:
+  voxify toggle                  Start/stop recording
+  voxify status                  Check current state
+  voxify cancel                  Cancel recognition
 
-Примечание:
-  Для работы CLI необходимо, чтобы Voxify.Host был запущен.");
+Note:
+  CLI requires Voxify.Host to be running.");
     }
 }

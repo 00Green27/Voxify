@@ -4,7 +4,7 @@ using ManySpeech.SileroVad.Model;
 namespace Voxify.Core;
 
 /// <summary>
-/// Реализация VAD двигателя на базе Silero VAD (ONNX).
+/// VAD engine implementation based on Silero VAD (ONNX).
 /// </summary>
 public class SileroVadEngine : IVadEngine
 {
@@ -14,31 +14,31 @@ public class SileroVadEngine : IVadEngine
     private readonly object _lock = new();
 
     /// <summary>
-    /// Проверяет, инициализирована ли модель.
+    /// Checks if the model is initialized.
     /// </summary>
     public bool IsInitialized => _vad != null;
 
     /// <summary>
-    /// Инициализирует VAD модель.
+    /// Initializes the VAD model.
     /// </summary>
-    /// <param name="modelPath">Путь к ONNX модели.</param>
-    /// <param name="configPath">Путь к YAML конфигурации.</param>
+    /// <param name="modelPath">Path to ONNX model.</param>
+    /// <param name="configPath">Path to YAML config.</param>
     public Task InitializeAsync(string modelPath, string configPath)
     {
         if (!File.Exists(modelPath))
         {
-            throw new FileNotFoundException($"VAD модель не найдена: {modelPath}");
+            throw new FileNotFoundException($"VAD model not found: {modelPath}");
         }
 
         if (!File.Exists(configPath))
         {
-            throw new FileNotFoundException($"VAD конфигурация не найдена: {configPath}");
+            throw new FileNotFoundException($"VAD config not found: {configPath}");
         }
 
         lock (_lock)
         {
-            // threshold: 0.5 - баланс между чувствительностью и ложными срабатываниями
-            // isDebug: false - отключаем отладочный вывод
+            // threshold: 0.5 - balance between sensitivity and false positives
+            // isDebug: false - disable debug output
             _vad = new OfflineVad(modelPath, configFilePath: configPath, threshold: 0.5F, isDebug: false);
             _stream = _vad.CreateOfflineStream();
         }
@@ -47,15 +47,15 @@ public class SileroVadEngine : IVadEngine
     }
 
     /// <summary>
-    /// Обрабатывает аудио сэмпл и возвращает результат детекции речи.
+    /// Processes audio sample and returns speech detection result.
     /// </summary>
-    /// <param name="samples">Массив аудио сэмплов (float, нормализованный -1.0 до 1.0).</param>
-    /// <returns>Результат детекции речи.</returns>
+    /// <param name="samples">Audio samples array (float, normalized -1.0 to 1.0).</param>
+    /// <returns>Speech detection result.</returns>
     public VadResult DetectSpeech(float[] samples)
     {
         if (_vad == null || _stream == null)
         {
-            throw new InvalidOperationException("VAD модель не инициализирована. Вызовите InitializeAsync().");
+            throw new InvalidOperationException("VAD model not initialized. Call InitializeAsync().");
         }
 
         if (samples.Length == 0)
@@ -67,10 +67,10 @@ public class SileroVadEngine : IVadEngine
         {
             try
             {
-                // Добавляем сэмплы в поток
+                // Add samples to stream
                 _stream.AddSamples(samples);
 
-                // Получаем результаты
+                // Get results
                 var results = _vad.GetResults(new List<OfflineStream> { _stream });
 
                 if (results.Count == 0 || results[0].Segments.Count == 0)
@@ -86,12 +86,12 @@ public class SileroVadEngine : IVadEngine
                     return VadResult.Empty;
                 }
 
-                // Конвертируем из сэмплов в миллисекунды (при 16kHz)
+                // Convert from samples to milliseconds (at 16kHz)
                 const int sampleRate = 16000;
                 long startMs = lastSegment.Start * 1000 / sampleRate;
                 long endMs = lastSegment.End * 1000 / sampleRate;
 
-                // Вычисляем уверенность на основе количества сегментов
+                // Calculate confidence based on segment count
                 float confidence = Math.Min(1.0f, result.Segments.Count / 10f);
 
                 return new VadResult
@@ -104,15 +104,15 @@ public class SileroVadEngine : IVadEngine
             }
             catch (Exception ex)
             {
-                // Логгируем ошибку и возвращаем пустой результат
-                Console.WriteLine($"[SileroVadEngine] Ошибка детекции: {ex.Message}");
+                // Log error and return empty result
+                Console.WriteLine($"[SileroVadEngine] Detection error: {ex.Message}");
                 return VadResult.Empty;
             }
         }
     }
 
     /// <summary>
-    /// Сбрасывает состояние VAD для новой сессии.
+    /// Resets VAD state for a new session.
     /// </summary>
     public void Reset()
     {
@@ -120,14 +120,14 @@ public class SileroVadEngine : IVadEngine
         {
             if (_vad != null && _stream != null)
             {
-                // Создаём новый поток для сброса состояния
+                // Create new stream to reset state
                 _stream = _vad.CreateOfflineStream();
             }
         }
     }
 
     /// <summary>
-    /// Освобождает ресурсы.
+    /// Releases resources.
     /// </summary>
     public void Dispose()
     {
