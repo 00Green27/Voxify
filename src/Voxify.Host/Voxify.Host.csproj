@@ -40,4 +40,44 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Embedded Resources (Icons) -->
+    <EmbeddedResource Include="..\..\resources\mic_idle_dark.png">
+      <Link>resources\mic_idle_dark.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\resources\mic_idle_dark@2x.png">
+      <Link>resources\mic_idle_dark@2x.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\resources\mic_idle_light.png">
+      <Link>resources\mic_idle_light.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\resources\mic_idle_light@2x.png">
+      <Link>resources\mic_idle_light@2x.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\resources\mic_recording_dark.png">
+      <Link>resources\mic_recording_dark.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\resources\mic_recording_dark@2x.png">
+      <Link>resources\mic_recording_dark@2x.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\resources\mic_recording_light.png">
+      <Link>resources\mic_recording_light.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\resources\mic_recording_light@2x.png">
+      <Link>resources\mic_recording_light@2x.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\resources\mic_transcribing_dark.png">
+      <Link>resources\mic_transcribing_dark.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\resources\mic_transcribing_dark@2x.png">
+      <Link>resources\mic_transcribing_dark@2x.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\resources\mic_transcribing_light.png">
+      <Link>resources\mic_transcribing_light.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\resources\mic_transcribing_light@2x.png">
+      <Link>resources\mic_transcribing_light@2x.png</Link>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>

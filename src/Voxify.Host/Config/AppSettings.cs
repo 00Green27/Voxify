@@ -204,6 +204,23 @@ public class SystemIntegrationConfig
 }
 
 /// <summary>
+/// UI and notification settings.
+/// </summary>
+public class UiConfig
+{
+    /// <summary>
+    /// Show balloon tip notifications (Info level).
+    /// Critical errors (Error, Warning) are always shown.
+    /// </summary>
+    public bool ShowNotifications { get; set; } = true;
+
+    /// <summary>
+    /// Use dark theme for UI elements (false = light theme, null = auto-detect).
+    /// </summary>
+    public bool? UseDarkTheme { get; set; } = null;
+}
+
+/// <summary>
 /// Main application settings.
 /// </summary>
 public class AppSettings
@@ -247,6 +264,11 @@ public class AppSettings
     /// System integration settings.
     /// </summary>
     public SystemIntegrationConfig SystemIntegration { get; set; } = new();
+
+    /// <summary>
+    /// UI and notification settings.
+    /// </summary>
+    public UiConfig Ui { get; set; } = new();
 }
 
 /// <summary>

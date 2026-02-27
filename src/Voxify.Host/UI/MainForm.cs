@@ -22,6 +22,8 @@ public class MainForm : Form
     private readonly DebugService _debugService;
     private readonly SystemIntegration _systemIntegration;
     private readonly PerformanceService _performanceService;
+    private TrayIconManager? _trayIconManager;
+    private NotificationService? _notificationService;
     private DebugWindow? _debugWindow;
 
     private ISpeechRecognizer? _speechRecognizer;
@@ -179,8 +181,8 @@ public class MainForm : Form
         this.FormBorderStyle = FormBorderStyle.FixedSingle;
         this.MinimizeBox = false;
         this.MaximizeBox = false;
-        
-        // Create icon (use standard one)
+
+        // Configure notify icon
         _notifyIcon.Icon = SystemIcons.Application;
         _notifyIcon.Text = "Voxify — Voice Input";
         _notifyIcon.Visible = true;
@@ -196,25 +198,36 @@ public class MainForm : Form
 
         // Handle double click
         _notifyIcon.DoubleClick += (s, e) => ShowForm();
+
+        // Initialize tray icon manager and notification service
+        _trayIconManager = new TrayIconManager(_notifyIcon, _debugService);
+        _notificationService = new NotificationService(_notifyIcon, _configManager.Settings.Ui, _debugService);
     }
 
     /// <summary>
     /// Updates tray icon based on recording state.
     /// </summary>
-    private void UpdateTrayIconForRecording(bool isRecording)
+    private void UpdateTrayIconForRecording(RecordingState state)
     {
-        if (isRecording)
+        var trayState = state switch
         {
-            // Green icon for recording state
-            _notifyIcon.Icon = SystemIcons.Application;
-            _notifyIcon.Text = $"Voxify — Recording... (Mode: {_hotkeyManager.Mode})";
-        }
-        else
+            RecordingState.Idle => TrayIconState.Idle,
+            RecordingState.Recording => TrayIconState.Recording,
+            RecordingState.Processing => TrayIconState.Processing,
+            _ => TrayIconState.Idle
+        };
+
+        _trayIconManager?.SetState(trayState);
+
+        // Update tooltip
+        var statusText = state switch
         {
-            // Default icon for idle state
-            _notifyIcon.Icon = SystemIcons.Application;
-            _notifyIcon.Text = "Voxify — Voice Input";
-        }
+            RecordingState.Idle => "Voxify — Voice Input",
+            RecordingState.Recording => "Voxify — Recording...",
+            RecordingState.Processing => "Voxify — Processing...",
+            _ => "Voxify — Voice Input"
+        };
+        _trayIconManager?.SetTooltip(statusText);
     }
 
     private async void InitializeAsync()
@@ -338,7 +351,7 @@ public class MainForm : Form
         {
             _recordingState = RecordingState.Recording;
             _recordingCompletionSource = new TaskCompletionSource<bool>();
-            UpdateTrayIconForRecording(true);
+            UpdateTrayIconForRecording(_recordingState);
 
             // Start recording
             _audioRecorder.StartRecording();
@@ -349,27 +362,17 @@ public class MainForm : Form
 
             Console.WriteLine("[MainForm] StartRecording called");
 
-            _notifyIcon.ShowBalloonTip(
-                1000,
-                "Voxify",
-                "Recording speech...",
-                ToolTipIcon.Info
-            );
+            _notificationService?.ShowInfo("Voxify", "Recording speech...");
         }
         catch (Exception ex)
         {
             _debugService?.Log("MainForm", $"Failed to start recording: {ex.Message}", LogLevel.Error);
-            
-            _notifyIcon.ShowBalloonTip(
-                5000,
-                "Voxify — Error",
-                $"Failed to start recording: {ex.Message}",
-                ToolTipIcon.Error
-            );
-            
+
+            _notificationService?.ShowError("Voxify — Error", $"Failed to start recording: {ex.Message}");
+
             // Reset state
             _recordingState = RecordingState.Idle;
-            UpdateTrayIconForRecording(false);
+            UpdateTrayIconForRecording(_recordingState);
         }
     }
 
@@ -381,7 +384,7 @@ public class MainForm : Form
         }
 
         _recordingState = RecordingState.Processing;
-        UpdateTrayIconForRecording(false);
+        UpdateTrayIconForRecording(_recordingState);
         _debugService?.UpdateRecordingState(_recordingState, false);
 
         try
@@ -421,51 +424,26 @@ public class MainForm : Form
                         // Log processed text (same as raw for now)
                         _debugService?.SetProcessedText(text);
 
-                        _notifyIcon.ShowBalloonTip(
-                            2000,
-                            "Voxify",
-                            $"Recognized: {text}",
-                            ToolTipIcon.Info
-                        );
+                        _notificationService?.ShowInfo("Voxify", $"Recognized: {text}");
                     }
                     else
                     {
-                        _notifyIcon.ShowBalloonTip(
-                            2000,
-                            "Voxify",
-                            "Speech not recognized",
-                            ToolTipIcon.Info
-                        );
+                        _notificationService?.ShowInfo("Voxify", "Speech not recognized");
                     }
                 }
                 else
                 {
-                    _notifyIcon.ShowBalloonTip(
-                        2000,
-                        "Voxify — Error",
-                        "Speech recognizer is not initialized",
-                        ToolTipIcon.Error
-                    );
+                    _notificationService?.ShowError("Voxify — Error", "Speech recognizer is not initialized");
                 }
             }
             else
             {
-                _notifyIcon.ShowBalloonTip(
-                    2000,
-                    "Voxify",
-                    "No audio recorded",
-                    ToolTipIcon.Info
-                );
+                _notificationService?.ShowInfo("Voxify", "No audio recorded");
             }
         }
         catch (Exception ex)
         {
-            _notifyIcon.ShowBalloonTip(
-                5000,
-                "Voxify — Error",
-                $"Recognition error: {ex.Message}",
-                ToolTipIcon.Error
-            );
+            _notificationService?.ShowError("Voxify — Error", $"Recognition error: {ex.Message}");
             _debugService?.Log("MainForm", $"Recognition error: {ex.Message}", LogLevel.Error);
         }
         finally
@@ -483,13 +461,38 @@ public class MainForm : Form
 
     private void OnSettingsClick(object? sender, EventArgs e)
     {
-        // TODO: Open settings window
-        MessageBox.Show(
-            $"Voxify Settings\n\nModel Path: {_configManager.Settings.ModelPath}\nLanguage: {_configManager.Settings.Language}\nHotkey: {_configManager.Settings.Hotkey}",
-            "Voxify — Settings",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Information
-        );
+        // Open settings dialog
+        using var settingsForm = new SettingsForm(_configManager, _debugService);
+        var result = settingsForm.ShowDialog();
+
+        // If settings were saved, re-register hotkey
+        if (result == DialogResult.OK)
+        {
+            ReRegisterHotkey();
+        }
+    }
+
+    /// <summary>
+    /// Re-registers the hotkey after settings change.
+    /// </summary>
+    private void ReRegisterHotkey()
+    {
+        try
+        {
+            _hotkeyManager.UnregisterHotkey();
+            _hotkeyManager.RegisterHotkey(_configManager.Settings.Hotkey);
+            _debugService?.Log("MainForm", $"Hotkey re-registered: {_configManager.Settings.Hotkey}", LogLevel.Info);
+        }
+        catch (Exception ex)
+        {
+            _notifyIcon.ShowBalloonTip(
+                5000,
+                "Voxify — Error",
+                $"Failed to register hotkey: {ex.Message}",
+                ToolTipIcon.Error
+            );
+            _debugService?.Log("MainForm", $"Failed to re-register hotkey: {ex.Message}", LogLevel.Error);
+        }
     }
 
     /// <summary>
@@ -547,7 +550,7 @@ public class MainForm : Form
         {
             await _audioRecorder.ForceStopAsync();
             _recordingState = RecordingState.Idle;
-            UpdateTrayIconForRecording(false);
+            UpdateTrayIconForRecording(_recordingState);
             Console.WriteLine("[MainForm] Recording cancelled via CLI");
         }
     }
@@ -584,6 +587,8 @@ public class MainForm : Form
     private void OnExitClick(object? sender, EventArgs e)
     {
         _notifyIcon.Visible = false;
+        _trayIconManager?.Dispose();
+        _notificationService?.Dispose();
         _hotkeyManager.Dispose();
         _debugHotkeyManager.Dispose();
         _speechRecognizer?.Dispose();
