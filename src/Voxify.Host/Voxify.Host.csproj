@@ -30,6 +30,7 @@
     
     <!-- Keyboard Simulation -->
     <PackageReference Include="InputSimulator" Version="1.0.4" />
+    <PackageReference Include="Whisper.net" Version="1.7.3" />
   </ItemGroup>
 
   <ItemGroup>

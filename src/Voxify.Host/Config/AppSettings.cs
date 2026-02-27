@@ -119,17 +119,46 @@ public class TextInputConfig
 }
 
 /// <summary>
+/// Speech recognition settings.
+/// </summary>
+public class SpeechRecognitionConfig
+{
+    /// <summary>
+    /// Speech provider: Vosk or Whisper.
+    /// </summary>
+    public string Provider { get; set; } = "Vosk";
+
+    /// <summary>
+    /// Path to speech recognition model folder/file.
+    /// For Vosk: folder path (e.g., C:\Voxify\Models\vosk-model-small-ru-0.22)
+    /// For Whisper: model file path (e.g., C:\Voxify\Models\ggml-tiny.bin)
+    /// </summary>
+    public string ModelPath { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Model language (ru-RU, en-US, ru, en).
+    /// </summary>
+    public string Language { get; set; } = "ru-RU";
+
+    /// <summary>
+    /// Whisper model type (tiny, base, small, medium, large-v3).
+    /// Used only when Provider is Whisper.
+    /// </summary>
+    public string WhisperModel { get; set; } = "tiny";
+}
+
+/// <summary>
 /// Main application settings.
 /// </summary>
 public class AppSettings
 {
     /// <summary>
-    /// Path to Vosk model folder.
+    /// Path to Vosk model folder (legacy, for backward compatibility).
     /// </summary>
     public string ModelPath { get; set; } = string.Empty;
 
     /// <summary>
-    /// Model language (ru-RU, en-US).
+    /// Model language (ru-RU, en-US) (legacy).
     /// </summary>
     public string Language { get; set; } = "ru-RU";
 
@@ -147,6 +176,11 @@ public class AppSettings
     /// Text input settings.
     /// </summary>
     public TextInputConfig TextInput { get; set; } = new();
+
+    /// <summary>
+    /// Speech recognition settings (new unified config).
+    /// </summary>
+    public SpeechRecognitionConfig SpeechRecognition { get; set; } = new();
 }
 
 /// <summary>

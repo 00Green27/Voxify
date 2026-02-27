@@ -131,8 +131,12 @@ Settings file: `%APPDATA%\Voxify\appsettings.json`
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `ModelPath` | Path to Vosk model folder | `""` |
-| `Language` | Model language (ru-RU, en-US) | `"ru-RU"` |
+| `SpeechRecognition.Provider` | Speech provider: `Vosk` or `Whisper` | `"Vosk"` |
+| `SpeechRecognition.ModelPath` | Path to model folder (Vosk) or file (Whisper) | `""` |
+| `SpeechRecognition.Language` | Model language (ru-RU, en-US, ru, en) | `"ru-RU"` |
+| `SpeechRecognition.WhisperModel` | Whisper model type: tiny, base, small, medium | `"tiny"` |
+| `ModelPath` | Legacy: Path to Vosk model folder | `""` |
+| `Language` | Legacy: Model language | `"ru-RU"` |
 | `Hotkey.Modifiers` | Modifiers (Control, Alt, Shift, Win) | `["Control"]` |
 | `Hotkey.Key` | Key (F1-F12, A-Z, 0-9) | `"F12"` |
 | `Hotkey.Mode` | Hotkey mode: `Toggle` or `PushToTalk` | `"Toggle"` |
@@ -145,6 +149,41 @@ Settings file: `%APPDATA%\Voxify\appsettings.json`
 | `VoiceActivityDetection.SileroConfigPath` | Path to Silero VAD YAML config | `models\vad\vad.yaml` |
 | `TextInput.TypeDelayMs` | Delay between characters (ms) | `10` |
 | `TextInput.PasteAsClipboard` | Paste via clipboard | `false` |
+
+## Models
+
+Voxify supports two speech recognition providers:
+
+| Provider | Description | Size | Accuracy | Speed |
+|----------|-------------|------|----------|-------|
+| **Vosk** | Fast offline recognition | ~45 MB | ~80% | ⚡ Fast |
+| **Whisper** | High accuracy (OpenAI) | 39 MB - 1.5 GB | ~90-95% | 🐢 Medium |
+
+See [Models Guide](docs/MODELS.md) for detailed comparison and download links.
+
+### Quick Setup
+
+**Vosk (recommended for start)**:
+```json
+{
+  "SpeechRecognition": {
+    "Provider": "Vosk",
+    "ModelPath": "C:\\Voxify\\Models\\vosk-model-small-ru-0.22",
+    "Language": "ru-RU"
+  }
+}
+```
+
+**Whisper (high accuracy)**:
+```json
+{
+  "SpeechRecognition": {
+    "Provider": "Whisper",
+    "ModelPath": "C:\\Voxify\\Models\\ggml-whisper-base.bin",
+    "Language": "ru"
+  }
+}
+```
 
 ## Architecture
 
@@ -162,11 +201,12 @@ See [ADR-0001](docs/decisions/ADR-0001-modular-architecture.md) for details.
 | ------------- | -------------------- | ------- |
 | Framework     | .NET                 | 10.0    |
 | Language      | C#                   | 13      |
-| Recognition   | Vosk                 | 0.3.38  |
+| Recognition   | Vosk / Whisper       | 0.3.38 / 1.7.3 |
 | Audio         | NAudio               | 2.2.1   |
 | Text Input    | InputSimulator       | 1.0.4   |
 | UI            | System.Windows.Forms | built-in |
 | Configuration | System.Text.Json     | built-in |
+| IPC           | Named Pipes          | built-in |
 
 ## Known Limitations
 

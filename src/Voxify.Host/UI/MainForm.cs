@@ -13,12 +13,13 @@ public class MainForm : Form
     private readonly ContextMenuStrip _contextMenu;
     private readonly ConfigurationManager _configManager;
     private readonly HotkeyManager _hotkeyManager;
-    private readonly SpeechRecognizerService _speechRecognizer;
     private readonly TextInputInjector _textInputInjector;
     private readonly VoskEngine _voskEngine;
     private readonly AudioRecorder _audioRecorder;
     private readonly IpcServer _ipcServer;
+    private readonly RecognizerFactory _recognizerFactory;
 
+    private ISpeechRecognizer? _speechRecognizer;
     private RecordingState _recordingState;
     private TaskCompletionSource<bool>? _recordingCompletionSource;
     private bool _debugMode;
@@ -35,7 +36,7 @@ public class MainForm : Form
         // Create core components
         _voskEngine = new VoskEngine();
         _audioRecorder = new AudioRecorder();
-        _speechRecognizer = new SpeechRecognizerService(_voskEngine, _audioRecorder);
+        _recognizerFactory = new RecognizerFactory(_audioRecorder, _voskEngine);
         _hotkeyManager = new HotkeyManager();
         _textInputInjector = new TextInputInjector(_configManager.Settings.TextInput);
 
@@ -131,20 +132,34 @@ public class MainForm : Form
 
     private async void InitializeAsync()
     {
-        // Initialize Vosk model if path is specified
-        if (!string.IsNullOrEmpty(_configManager.Settings.ModelPath))
+        // Create speech recognizer based on configured provider
+        var speechConfig = _configManager.Settings.SpeechRecognition;
+        
+        // Fallback to legacy config if new config is empty
+        if (string.IsNullOrEmpty(speechConfig.ModelPath) && !string.IsNullOrEmpty(_configManager.Settings.ModelPath))
+        {
+            speechConfig.ModelPath = _configManager.Settings.ModelPath;
+            speechConfig.Language = _configManager.Settings.Language;
+            speechConfig.Provider = "Vosk";
+        }
+
+        if (!string.IsNullOrEmpty(speechConfig.ModelPath))
         {
             try
             {
+                // Create recognizer based on provider
+                _speechRecognizer = _recognizerFactory.CreateRecognizer(speechConfig.Provider);
+                
                 await _speechRecognizer.InitializeAsync(
-                    _configManager.Settings.ModelPath,
-                    _configManager.Settings.Language
+                    speechConfig.ModelPath,
+                    speechConfig.Language
                 );
 
+                var providerName = _speechRecognizer.Provider == SpeechProvider.Vosk ? "Vosk" : "Whisper";
                 _notifyIcon.ShowBalloonTip(
                     2000,
                     "Voxify",
-                    $"Model loaded. Language: {_configManager.Settings.Language}",
+                    $"{providerName} model loaded. Language: {speechConfig.Language}",
                     ToolTipIcon.Info
                 );
             }
@@ -262,27 +277,39 @@ public class MainForm : Form
             if (audioBytes.Length > 0)
             {
                 // Recognize
-                var text = await _speechRecognizer.RecognizeAsync(audioBytes);
-
-                if (!string.IsNullOrEmpty(text))
+                if (_speechRecognizer != null && _speechRecognizer.IsInitialized)
                 {
-                    // Insert text
-                    _textInputInjector.TypeText(text);
+                    var text = await _speechRecognizer.RecognizeAsync(audioBytes);
 
-                    _notifyIcon.ShowBalloonTip(
-                        2000,
-                        "Voxify",
-                        $"Recognized: {text}",
-                        ToolTipIcon.Info
-                    );
+                    if (!string.IsNullOrEmpty(text))
+                    {
+                        // Insert text
+                        _textInputInjector.TypeText(text);
+
+                        _notifyIcon.ShowBalloonTip(
+                            2000,
+                            "Voxify",
+                            $"Recognized: {text}",
+                            ToolTipIcon.Info
+                        );
+                    }
+                    else
+                    {
+                        _notifyIcon.ShowBalloonTip(
+                            2000,
+                            "Voxify",
+                            "Speech not recognized",
+                            ToolTipIcon.Info
+                        );
+                    }
                 }
                 else
                 {
                     _notifyIcon.ShowBalloonTip(
                         2000,
-                        "Voxify",
-                        "Speech not recognized",
-                        ToolTipIcon.Info
+                        "Voxify — Error",
+                        "Speech recognizer is not initialized",
+                        ToolTipIcon.Error
                     );
                 }
             }
@@ -407,7 +434,7 @@ public class MainForm : Form
     {
         _notifyIcon.Visible = false;
         _hotkeyManager.Dispose();
-        _speechRecognizer.Dispose();
+        _speechRecognizer?.Dispose();
         _ipcServer.Dispose();
         Application.Exit();
     }

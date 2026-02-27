@@ -10,6 +10,10 @@ public class SpeechRecognizerService : ISpeechRecognizer
     private bool _isInitialized;
     private bool _disposed;
 
+    public SpeechProvider Provider => SpeechProvider.Vosk;
+
+    public bool IsInitialized => _isInitialized;
+
     public SpeechRecognizerService(VoskEngine voskEngine, AudioRecorder audioRecorder)
     {
         _voskEngine = voskEngine;
@@ -28,7 +32,7 @@ public class SpeechRecognizerService : ISpeechRecognizer
     /// <summary>
     /// Records audio from microphone and recognizes speech.
     /// </summary>
-    public async Task<string?> RecognizeAsync(byte[]? audioData = null, CancellationToken cancellationToken = default)
+    public async Task<string?> RecognizeAsync(byte[] audioData, CancellationToken cancellationToken = default)
     {
         if (!_isInitialized)
         {
@@ -38,20 +42,7 @@ public class SpeechRecognizerService : ISpeechRecognizer
         try
         {
             // Record audio
-            byte[] audioBytes;
-            if (audioData != null)
-            {
-                audioBytes = audioData;
-            }
-            else
-            {
-                _audioRecorder.StartRecording();
-
-                // Wait a few seconds for recording
-                await Task.Delay(3000, cancellationToken);
-
-                audioBytes = await _audioRecorder.StopRecordingAsync();
-            }
+            byte[] audioBytes = audioData;
 
             if (audioBytes.Length == 0)
             {
@@ -122,35 +113,6 @@ public class SpeechRecognizerService : ISpeechRecognizer
         }
 
         return null;
-    }
-
-    /// <summary>
-    /// Records and recognizes speech from microphone.
-    /// </summary>
-    public async Task<string?> RecognizeFromMicrophoneAsync(int maxDurationSeconds = 10, CancellationToken cancellationToken = default)
-    {
-        if (!_isInitialized)
-        {
-            throw new InvalidOperationException("Recognizer is not initialized");
-        }
-
-        try
-        {
-            _audioRecorder.StartRecording();
-
-            // Wait specified time or until cancelled
-            await Task.Delay(maxDurationSeconds * 1000, cancellationToken);
-
-            var audioBytes = await _audioRecorder.StopRecordingAsync();
-
-            return await RecognizeAsync(audioBytes, cancellationToken);
-        }
-        catch (OperationCanceledException)
-        {
-            // Cancellation - normal completion
-            await _audioRecorder.StopRecordingAsync();
-            return null;
-        }
     }
 
     public void Dispose()
