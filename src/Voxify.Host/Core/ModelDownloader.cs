@@ -17,6 +17,11 @@ public class ModelInfo
     public string ExpectedChecksum { get; init; } = string.Empty;
     public long ExpectedSizeBytes { get; init; }
     public string Description { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Returns human-readable model name for ComboBox display.
+    /// </summary>
+    public override string ToString() => Name;
 }
 
 /// <summary>

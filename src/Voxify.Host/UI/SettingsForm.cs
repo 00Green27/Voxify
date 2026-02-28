@@ -15,10 +15,11 @@ public class SettingsForm : Form
     private readonly ModelDownloader _modelDownloader;
 
     // Controls - Hotkey section
-    private GroupBox _hotkeyGroupBox = null!;
-    private RadioButton _toggleRadioButton = null!;
-    private RadioButton _pushToTalkRadioButton = null!;
-    private HotkeyPickerControl _hotkeyPickerControl = null!;
+    private GroupBox _hotkeyModeGroupBox = null!;
+    private GroupBox _hotkeyCombinationGroupBox = null!;
+    private ToggleSwitch _pushToTalkSwitch = null!;
+    private Label _pushToTalkLabel = null!;
+    private HotkeyInputTextBox _hotkeyInputTextBox = null!;
 
     // Controls - Model section
     private GroupBox _modelGroupBox = null!;
@@ -58,7 +59,7 @@ public class SettingsForm : Form
 
         // Configure form
         Text = "Voxify — Настройки";
-        Size = new Size(550, 650);
+        Size = new Size(550, 620);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
@@ -66,7 +67,8 @@ public class SettingsForm : Form
         Font = new Font("Segoe UI", 9F, FontStyle.Regular);
 
         // Create controls
-        _hotkeyGroupBox = CreateHotkeyGroupBox();
+        _hotkeyModeGroupBox = CreateHotkeyModeGroupBox();
+        _hotkeyCombinationGroupBox = CreateHotkeyCombinationGroupBox();
         _modelGroupBox = CreateModelGroupBox();
         _notificationsGroupBox = CreateNotificationsGroupBox();
         _showLogsButton = CreateShowLogsButton();
@@ -74,7 +76,8 @@ public class SettingsForm : Form
         _cancelButton = CreateCancelButton();
 
         // Add controls to form
-        Controls.Add(_hotkeyGroupBox);
+        Controls.Add(_hotkeyModeGroupBox);
+        Controls.Add(_hotkeyCombinationGroupBox);
         Controls.Add(_modelGroupBox);
         Controls.Add(_notificationsGroupBox);
         Controls.Add(_showLogsButton);
@@ -92,57 +95,85 @@ public class SettingsForm : Form
         FormClosing += SettingsForm_FormClosing;
     }
 
-    private GroupBox CreateHotkeyGroupBox()
+    private GroupBox CreateHotkeyModeGroupBox()
     {
         var groupBox = new GroupBox
         {
-            Text = "Горячая клавиша",
+            Text = "Режим работы",
             Location = new Point(10, 10),
-            Size = new Size(510, 180),
+            Size = new Size(510, 80),
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         };
 
-        // Mode selection
-        var modeLabel = new Label
+        // Push-to-Talk toggle (off = Toggle mode, on = Push-to-Talk mode)
+        _pushToTalkLabel = new Label
         {
-            Text = "Режим работы:",
-            Location = new Point(10, 25),
-            AutoSize = true
-        };
-
-        _toggleRadioButton = new RadioButton
-        {
-            Text = "Toggle (нажать для старта/стопа)",
-            Location = new Point(10, 50),
+            Text = "Push-to-Talk",
+            Location = new Point(10, 30),
             AutoSize = true,
-            Checked = true
+            Font = new Font(Font.FontFamily, 9F, FontStyle.Regular)
         };
 
-        _pushToTalkRadioButton = new RadioButton
+        _pushToTalkSwitch = new ToggleSwitch
         {
-            Text = "Push-to-Talk (удерживать для записи)",
-            Location = new Point(10, 75),
-            AutoSize = true
+            Location = new Point(115, 27),
+            Checked = false
+        };
+        _pushToTalkSwitch.CheckedChanged += OnPushToTalkModeChanged;
+
+        var pushToTalkHint = new Label
+        {
+            Text = "(удерживать для записи)",
+            Location = new Point(175, 30),
+            AutoSize = true,
+            Font = new Font(Font.FontFamily, 8F, FontStyle.Italic),
+            ForeColor = Color.Gray
         };
 
-        var hotkeyLabel = new Label
+        var toggleHint = new Label
         {
-            Text = "Комбинация клавиш:",
-            Location = new Point(10, 105),
-            AutoSize = true
+            Text = "Выключено: Toggle (нажать для старта/стопа)",
+            Location = new Point(10, 55),
+            AutoSize = true,
+            Font = new Font(Font.FontFamily, 7F, FontStyle.Italic),
+            ForeColor = Color.Gray
         };
-
-        _hotkeyPickerControl = new HotkeyPickerControl
-        {
-            Location = new Point(10, 130),
-            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
-        };
-        _hotkeyPickerControl.HotkeyChanged += OnHotkeyChanged;
 
         groupBox.Controls.AddRange([
-            modeLabel, _toggleRadioButton, _pushToTalkRadioButton,
-            hotkeyLabel, _hotkeyPickerControl
+            _pushToTalkLabel, _pushToTalkSwitch, pushToTalkHint, toggleHint
         ]);
+
+        return groupBox;
+    }
+
+    private GroupBox CreateHotkeyCombinationGroupBox()
+    {
+        var groupBox = new GroupBox
+        {
+            Text = "Комбинация клавиш",
+            Location = new Point(10, 100),
+            Size = new Size(510, 90),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+        };
+
+        _hotkeyInputTextBox = new HotkeyInputTextBox
+        {
+            Location = new Point(10, 25),
+            Size = new Size(480, 23),
+            Anchor = AnchorStyles.Left | AnchorStyles.Right
+        };
+        _hotkeyInputTextBox.HotkeyChanged += OnHotkeyChanged;
+
+        var hotkeyHint = new Label
+        {
+            Text = "Нажмите комбинацию в поле выше (например, Ctrl + Z)",
+            Location = new Point(10, 58),
+            AutoSize = true,
+            Font = new Font(Font.FontFamily, 7F, FontStyle.Italic),
+            ForeColor = Color.Gray
+        };
+
+        groupBox.Controls.AddRange([_hotkeyInputTextBox, hotkeyHint]);
 
         return groupBox;
     }
@@ -153,7 +184,7 @@ public class SettingsForm : Form
         {
             Text = "Модель распознавания",
             Location = new Point(10, 200),
-            Size = new Size(510, 220),
+            Size = new Size(510, 210),
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         };
 
@@ -218,10 +249,7 @@ public class SettingsForm : Form
         {
             Text = "Скачать модель ▼",
             Location = new Point(10, 130),
-            AutoSize = true,
-            BackColor = Color.FromArgb(0, 120, 215),
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat
+            AutoSize = true
         };
         _downloadButton.Click += OnDownloadButtonClick;
 
@@ -266,7 +294,7 @@ public class SettingsForm : Form
         var groupBox = new GroupBox
         {
             Text = "Уведомления",
-            Location = new Point(10, 430),
+            Location = new Point(10, 420),
             Size = new Size(510, 80),
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         };
@@ -298,7 +326,7 @@ public class SettingsForm : Form
         return new Button
         {
             Text = "Показать логи",
-            Location = new Point(10, 550),
+            Location = new Point(10, 520),
             AutoSize = true,
             Anchor = AnchorStyles.Bottom | AnchorStyles.Left
         };
@@ -309,12 +337,9 @@ public class SettingsForm : Form
         return new Button
         {
             Text = "Сохранить",
-            Location = new Point(300, 550),
+            Location = new Point(300, 520),
             AutoSize = true,
-            Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
-            BackColor = Color.FromArgb(0, 120, 215),
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat
+            Anchor = AnchorStyles.Bottom | AnchorStyles.Right
         };
     }
 
@@ -323,7 +348,7 @@ public class SettingsForm : Form
         return new Button
         {
             Text = "Отмена",
-            Location = new Point(420, 550),
+            Location = new Point(420, 520),
             AutoSize = true,
             Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
             DialogResult = DialogResult.Cancel
@@ -334,20 +359,11 @@ public class SettingsForm : Form
     {
         var settings = _configManager.Settings;
 
-        // Load hotkey mode
-        if (settings.Hotkey.Mode.ToLower() == "pushtotalk")
-        {
-            _pushToTalkRadioButton.Checked = true;
-            _toggleRadioButton.Checked = false;
-        }
-        else
-        {
-            _toggleRadioButton.Checked = true;
-            _pushToTalkRadioButton.Checked = false;
-        }
+        // Load hotkey mode (Push-to-Talk toggle: on = PushToTalk, off = Toggle)
+        _pushToTalkSwitch.Checked = settings.Hotkey.Mode.ToLower() == "pushtotalk";
 
         // Load hotkey combination
-        _hotkeyPickerControl.SetHotkeyConfig(settings.Hotkey);
+        _hotkeyInputTextBox.SetHotkeyConfig(settings.Hotkey);
         _modifiedHotkeyConfig = new HotkeyConfig
         {
             Mode = settings.Hotkey.Mode,
@@ -371,7 +387,7 @@ public class SettingsForm : Form
             var modelName = Path.GetFileName(settings.SpeechRecognition.ModelPath);
             for (int i = 0; i < _modelComboBox.Items.Count; i++)
             {
-                if (_modelComboBox.Items[i] is ModelInfo info && 
+                if (_modelComboBox.Items[i] is ModelInfo info &&
                     (info.Id == modelName || info.Name.Contains(modelName)))
                 {
                     _modelComboBox.SelectedIndex = i;
@@ -431,6 +447,11 @@ public class SettingsForm : Form
     private void OnHotkeyChanged(object? sender, HotkeyConfig e)
     {
         _modifiedHotkeyConfig = e;
+    }
+
+    private void OnPushToTalkModeChanged(object? sender, EventArgs e)
+    {
+        // Single toggle: checked = PushToTalk, unchecked = Toggle
     }
 
     private void OnProviderChanged(object? sender, EventArgs e)
@@ -562,7 +583,7 @@ public class SettingsForm : Form
             _configManager.UpdateSettings(settings =>
             {
                 // Update hotkey mode
-                settings.Hotkey.Mode = _pushToTalkRadioButton.Checked ? "PushToTalk" : "Toggle";
+                settings.Hotkey.Mode = _pushToTalkSwitch.Checked ? "PushToTalk" : "Toggle";
 
                 // Update hotkey combination
                 if (_modifiedHotkeyConfig != null)
